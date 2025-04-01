@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useAuth } from '../context/AuthContext';
+import Header from './Header'; // Importamos el Header
 
-const Layout = ({ children, title = 'Portal KPIs' }) => {
+const Layout = ({ children, title = 'Portal KPIs', hideHeader = false }) => {
   const router = useRouter();
   const { user, logout } = useAuth();
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -65,6 +66,9 @@ const Layout = ({ children, title = 'Portal KPIs' }) => {
         <meta charSet="utf-8" />
         <meta name="viewport" content="initial-scale=1.0, width=device-width" />
       </Head>
+      
+      {/* Mostramos el Header solo si hideHeader es false */}
+      {!hideHeader && <Header />}
       
       <div className={`kpi-dashboard ${isFullscreen ? 'fullscreen' : ''}`}>
         {/* Sidebar - no aparece en fullscreen */}
