@@ -166,6 +166,24 @@ function HorasModule() {
       return {...area, horas: horasTotales};
     }));
   };
+  
+  // Función para agregar un nuevo empleado
+  const agregarEmpleado = () => {
+    // Obtener el ID más alto actual y sumar 1
+    const nuevoId = Math.max(...empleados.map(emp => emp.id)) + 1;
+    
+    // Crear nuevo empleado
+    const nuevoEmpleado = {
+      id: nuevoId,
+      nombre: `Nuevo Empleado`,
+      horas: 0,
+      area: selectedArea
+    };
+    
+    // Actualizar el estado con el nuevo empleado
+    const nuevosEmpleados = [...empleados, nuevoEmpleado];
+    setEmpleados(nuevosEmpleados);
+  };
 
   return (
     <div>
@@ -253,7 +271,10 @@ function HorasModule() {
               </div>
             ))}
             
-            <button className="add-button">
+            <button 
+              className="add-button"
+              onClick={agregarEmpleado}
+            >
               + Agregar Empleado
             </button>
           </div>
@@ -458,6 +479,24 @@ function SalariosModule() {
       return {...area, salario: salarioTotal};
     }));
   };
+  
+  // Función para agregar un nuevo empleado
+  const agregarEmpleado = () => {
+    // Obtener el ID más alto actual y sumar 1
+    const nuevoId = Math.max(...empleados.map(emp => emp.id)) + 1;
+    
+    // Crear nuevo empleado
+    const nuevoEmpleado = {
+      id: nuevoId,
+      nombre: `Nuevo Empleado`,
+      salario: 0,
+      area: selectedArea
+    };
+    
+    // Actualizar el estado con el nuevo empleado
+    const nuevosEmpleados = [...empleados, nuevoEmpleado];
+    setEmpleados(nuevosEmpleados);
+  };
 
   return (
     <div>
@@ -545,7 +584,10 @@ function SalariosModule() {
               </div>
             ))}
             
-            <button className="add-button">
+            <button 
+              className="add-button"
+              onClick={agregarEmpleado}
+            >
               + Agregar Empleado
             </button>
           </div>
