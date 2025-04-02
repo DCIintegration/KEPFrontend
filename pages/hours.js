@@ -1,4 +1,5 @@
 // pages/dashboard.js
+import styles from '../styles/hours.module.css';
 import { useState } from 'react';
 import Layout from '../components/Layout';
 
@@ -7,104 +8,37 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <div className="container">
-        <h1 className="title">Portal de KPIs</h1>
+      <div className={styles.container}>
+        <h1 className={styles.title}>Portal de KPIs</h1>
         
         {/* Selector de Módulo */}
-        <div className="module-selector">
-          <div className="buttons">
+        <div className={styles.moduleSelector}>
+          <div className={styles.buttons}>
             <button 
-              className={`module-button ${activeTab === 'horas' ? 'active' : ''}`}
+              className={`${styles.moduleButton} ${activeTab === 'horas' ? styles.active : ''}`}
               onClick={() => setActiveTab('horas')}
             >
-              <span className="icon">⏱️</span>
+              <span className={styles.icon}>⏱️</span>
               <span>Control de Horas</span>
             </button>
             
             <button 
-              className={`module-button ${activeTab === 'salarios' ? 'active' : ''}`}
+              className={`${styles.moduleButton} ${activeTab === 'salarios' ? styles.active : ''}`}
               onClick={() => setActiveTab('salarios')}
             >
-              <span className="icon">💰</span>
+              <span className={styles.icon}>💰</span>
               <span>Control de Salarios</span>
             </button>
           </div>
         </div>
         
         {/* Contenido */}
-        <div className="content">
+        <div className={styles.content}>
           {activeTab === 'horas' && <HorasModule />}
           {activeTab === 'salarios' && <SalariosModule />}
         </div>
       </div>
       
-      <style jsx>{`
-        .container {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 20px;
-        }
-        
-        .title {
-          font-size: 28px;
-          margin-bottom: 20px;
-          color: #333;
-        }
-        
-        .module-selector {
-          margin-bottom: 30px;
-        }
-        
-        .buttons {
-          display: flex;
-          gap: 20px;
-          justify-content: center;
-        }
-        
-        .module-button {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          width: 200px;
-          height: 120px;
-          border-radius: 10px;
-          border: 2px solid #e1e1e1;
-          background-color: white;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-        
-        .module-button:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-        }
-        
-        .module-button.active {
-          border-color: #4361ee;
-          background-color: #f0f4ff;
-        }
-        
-        .icon {
-          font-size: 28px;
-          margin-bottom: 8px;
-        }
-        
-        .content {
-          background-color: white;
-          border-radius: 10px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-          padding: 30px;
-        }
-        
-        @media (max-width: 600px) {
-          .buttons {
-            flex-direction: column;
-            align-items: center;
-          }
-        }
-      `}</style>
     </Layout>
   );
 }
@@ -187,17 +121,17 @@ function HorasModule() {
 
   return (
     <div>
-      <h2>Control de Horas</h2>
+      <h2 className={styles.moduleTitle}>Control de Horas</h2>
       
-      <div className="view-selector">
+      <div className={styles.viewSelector}>
         <button 
-          className={viewMode === 'areas' ? 'active' : ''}
+          className={viewMode === 'areas' ? styles.active : ''}
           onClick={() => setViewMode('areas')}
         >
           Por Áreas
         </button>
         <button 
-          className={viewMode === 'empleados' ? 'active' : ''}
+          className={viewMode === 'empleados' ? styles.active : ''}
           onClick={() => setViewMode('empleados')}
         >
           Por Empleados
@@ -205,21 +139,21 @@ function HorasModule() {
       </div>
       
       {viewMode === 'areas' ? (
-        <div className="areas-container">
-          <h3>Horas por Área</h3>
+        <div className={styles.areasContainer}>
+          <h3 className={styles.sectionTitle}>Horas por Área</h3>
           
-          <div className="areas-grid">
+          <div className={styles.areasGrid}>
             {areas.map(area => (
-              <div key={area.id} className="area-card">
+              <div key={area.id} className={styles.areaCard}>
                 <h4>{area.nombre}</h4>
-                <div className="input-group">
+                <div className={styles.inputGroup}>
                   <label>Horas Totales</label>
                   <input 
                     type="number"
                     value={area.horas}
                     onChange={(e) => area.editable && updateAreaHoras(area.id, e.target.value)}
                     disabled={!area.editable}
-                    className={area.editable ? '' : 'disabled'}
+                    className={area.editable ? '' : styles.disabled}
                   />
                 </div>
               </div>
@@ -227,10 +161,10 @@ function HorasModule() {
           </div>
         </div>
       ) : (
-        <div className="empleados-container">
-          <h3>Horas por Empleado</h3>
+        <div className={styles.empleadosContainer}>
+          <h3 className={styles.sectionTitle}>Horas por Empleado</h3>
           
-          <div className="area-selector">
+          <div className={styles.areaSelector}>
             <label>Seleccionar área:</label>
             <select 
               value={selectedArea}
@@ -242,12 +176,12 @@ function HorasModule() {
             </select>
           </div>
           
-          <div className="empleados-list">
+          <div className={styles.empleadosList}>
             {empleadosFiltrados.map(empleado => (
-              <div key={empleado.id} className="empleado-card">
+              <div key={empleado.id} className={styles.empleadoCard}>
                 <h4>Empleado #{empleado.id}</h4>
-                <div className="form-row">
-                  <div className="input-group">
+                <div className={styles.formRow}>
+                  <div className={styles.inputGroup}>
                     <label>Nombre</label>
                     <input 
                       type="text"
@@ -259,7 +193,7 @@ function HorasModule() {
                       }}
                     />
                   </div>
-                  <div className="input-group">
+                  <div className={styles.inputGroup}>
                     <label>Horas</label>
                     <input 
                       type="number"
@@ -272,7 +206,7 @@ function HorasModule() {
             ))}
             
             <button 
-              className="add-button"
+              className={styles.addButton}
               onClick={agregarEmpleado}
             >
               + Agregar Empleado
@@ -281,143 +215,6 @@ function HorasModule() {
         </div>
       )}
       
-      <style jsx>{`
-        h2 {
-          font-size: 24px;
-          margin-bottom: 20px;
-          color: #333;
-        }
-        
-        h3 {
-          font-size: 20px;
-          margin-bottom: 20px;
-          color: #555;
-        }
-        
-        .view-selector {
-          display: flex;
-          margin-bottom: 30px;
-          border-bottom: 1px solid #e1e1e1;
-        }
-        
-        .view-selector button {
-          background: none;
-          border: none;
-          padding: 12px 24px;
-          font-size: 16px;
-          cursor: pointer;
-          position: relative;
-        }
-        
-        .view-selector button.active {
-          color: #4361ee;
-          font-weight: 500;
-        }
-        
-        .view-selector button.active:after {
-          content: '';
-          position: absolute;
-          bottom: -1px;
-          left: 0;
-          width: 100%;
-          height: 3px;
-          background-color: #4361ee;
-        }
-        
-        .areas-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-          gap: 20px;
-        }
-        
-        .area-card {
-          border: 1px solid #e1e1e1;
-          border-radius: 8px;
-          padding: 20px;
-          transition: box-shadow 0.3s;
-        }
-        
-        .area-card:hover {
-          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-        }
-        
-        .input-group {
-          display: flex;
-          flex-direction: column;
-          margin-top: 15px;
-        }
-        
-        .input-group label {
-          font-size: 14px;
-          color: #666;
-          margin-bottom: 5px;
-        }
-        
-        .input-group input {
-          padding: 10px;
-          border: 1px solid #ddd;
-          border-radius: 5px;
-          font-size: 16px;
-        }
-        
-        .input-group input.disabled {
-          background-color: #f8f9fa;
-          color: #6c757d;
-        }
-        
-        .area-selector {
-          display: flex;
-          align-items: center;
-          margin-bottom: 20px;
-          gap: 10px;
-        }
-        
-        .area-selector select {
-          padding: 10px;
-          border: 1px solid #ddd;
-          border-radius: 5px;
-          font-size: 16px;
-          min-width: 200px;
-        }
-        
-        .empleado-card {
-          border: 1px solid #e1e1e1;
-          border-radius: 8px;
-          padding: 20px;
-          margin-bottom: 20px;
-        }
-        
-        .form-row {
-          display: flex;
-          gap: 20px;
-        }
-        
-        .form-row .input-group {
-          flex: 1;
-        }
-        
-        .add-button {
-          background-color: #4361ee;
-          color: white;
-          border: none;
-          border-radius: 5px;
-          padding: 12px 20px;
-          font-size: 16px;
-          cursor: pointer;
-          margin-top: 10px;
-          transition: background-color 0.3s;
-        }
-        
-        .add-button:hover {
-          background-color: #3651d4;
-        }
-        
-        @media (max-width: 768px) {
-          .form-row {
-            flex-direction: column;
-          }
-        }
-      `}</style>
     </div>
   );
 }
@@ -500,17 +297,17 @@ function SalariosModule() {
 
   return (
     <div>
-      <h2>Control de Salarios</h2>
+      <h2 className={styles.moduleTitle}>Control de Salarios</h2>
       
-      <div className="view-selector">
+      <div className={styles.viewSelector}>
         <button 
-          className={viewMode === 'areas' ? 'active' : ''}
+          className={viewMode === 'areas' ? styles.active : ''}
           onClick={() => setViewMode('areas')}
         >
           Por Áreas
         </button>
         <button 
-          className={viewMode === 'empleados' ? 'active' : ''}
+          className={viewMode === 'empleados' ? styles.active : ''}
           onClick={() => setViewMode('empleados')}
         >
           Por Empleados
@@ -518,21 +315,21 @@ function SalariosModule() {
       </div>
       
       {viewMode === 'areas' ? (
-        <div className="areas-container">
-          <h3>Salarios por Área</h3>
+        <div className={styles.areasContainer}>
+          <h3 className={styles.sectionTitle}>Salarios por Área</h3>
           
-          <div className="areas-grid">
+          <div className={styles.areasGrid}>
             {areas.map(area => (
-              <div key={area.id} className="area-card">
+              <div key={area.id} className={styles.areaCard}>
                 <h4>{area.nombre}</h4>
-                <div className="input-group">
+                <div className={styles.inputGroup}>
                   <label>Salario Total</label>
                   <input 
                     type="number"
                     value={area.salario}
                     onChange={(e) => area.editable && updateAreaSalario(area.id, e.target.value)}
                     disabled={!area.editable}
-                    className={area.editable ? '' : 'disabled'}
+                    className={area.editable ? '' : styles.disabled}
                   />
                 </div>
               </div>
@@ -540,10 +337,10 @@ function SalariosModule() {
           </div>
         </div>
       ) : (
-        <div className="empleados-container">
-          <h3>Salarios por Empleado</h3>
+        <div className={styles.empleadosContainer}>
+          <h3 className={styles.sectionTitle}>Salarios por Empleado</h3>
           
-          <div className="area-selector">
+          <div className={styles.areaSelector}>
             <label>Seleccionar área:</label>
             <select 
               value={selectedArea}
@@ -555,12 +352,12 @@ function SalariosModule() {
             </select>
           </div>
           
-          <div className="empleados-list">
+          <div className={styles.empleadosList}>
             {empleadosFiltrados.map(empleado => (
-              <div key={empleado.id} className="empleado-card">
+              <div key={empleado.id} className={styles.empleadoCard}>
                 <h4>Empleado #{empleado.id}</h4>
-                <div className="form-row">
-                  <div className="input-group">
+                <div className={styles.formRow}>
+                  <div className={styles.inputGroup}>
                     <label>Nombre</label>
                     <input 
                       type="text"
@@ -572,7 +369,7 @@ function SalariosModule() {
                       }}
                     />
                   </div>
-                  <div className="input-group">
+                  <div className={styles.inputGroup}>
                     <label>Salario</label>
                     <input 
                       type="number"
@@ -585,7 +382,7 @@ function SalariosModule() {
             ))}
             
             <button 
-              className="add-button"
+              className={styles.addButton}
               onClick={agregarEmpleado}
             >
               + Agregar Empleado
@@ -594,143 +391,6 @@ function SalariosModule() {
         </div>
       )}
       
-      <style jsx>{`
-        h2 {
-          font-size: 24px;
-          margin-bottom: 20px;
-          color: #333;
-        }
-        
-        h3 {
-          font-size: 20px;
-          margin-bottom: 20px;
-          color: #555;
-        }
-        
-        .view-selector {
-          display: flex;
-          margin-bottom: 30px;
-          border-bottom: 1px solid #e1e1e1;
-        }
-        
-        .view-selector button {
-          background: none;
-          border: none;
-          padding: 12px 24px;
-          font-size: 16px;
-          cursor: pointer;
-          position: relative;
-        }
-        
-        .view-selector button.active {
-          color: #4361ee;
-          font-weight: 500;
-        }
-        
-        .view-selector button.active:after {
-          content: '';
-          position: absolute;
-          bottom: -1px;
-          left: 0;
-          width: 100%;
-          height: 3px;
-          background-color: #4361ee;
-        }
-        
-        .areas-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-          gap: 20px;
-        }
-        
-        .area-card {
-          border: 1px solid #e1e1e1;
-          border-radius: 8px;
-          padding: 20px;
-          transition: box-shadow 0.3s;
-        }
-        
-        .area-card:hover {
-          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-        }
-        
-        .input-group {
-          display: flex;
-          flex-direction: column;
-          margin-top: 15px;
-        }
-        
-        .input-group label {
-          font-size: 14px;
-          color: #666;
-          margin-bottom: 5px;
-        }
-        
-        .input-group input {
-          padding: 10px;
-          border: 1px solid #ddd;
-          border-radius: 5px;
-          font-size: 16px;
-        }
-        
-        .input-group input.disabled {
-          background-color: #f8f9fa;
-          color: #6c757d;
-        }
-        
-        .area-selector {
-          display: flex;
-          align-items: center;
-          margin-bottom: 20px;
-          gap: 10px;
-        }
-        
-        .area-selector select {
-          padding: 10px;
-          border: 1px solid #ddd;
-          border-radius: 5px;
-          font-size: 16px;
-          min-width: 200px;
-        }
-        
-        .empleado-card {
-          border: 1px solid #e1e1e1;
-          border-radius: 8px;
-          padding: 20px;
-          margin-bottom: 20px;
-        }
-        
-        .form-row {
-          display: flex;
-          gap: 20px;
-        }
-        
-        .form-row .input-group {
-          flex: 1;
-        }
-        
-        .add-button {
-          background-color: #4361ee;
-          color: white;
-          border: none;
-          border-radius: 5px;
-          padding: 12px 20px;
-          font-size: 16px;
-          cursor: pointer;
-          margin-top: 10px;
-          transition: background-color 0.3s;
-        }
-        
-        .add-button:hover {
-          background-color: #3651d4;
-        }
-        
-        @media (max-width: 768px) {
-          .form-row {
-            flex-direction: column;
-          }
-        }
-      `}</style>
     </div>
   );
 }
