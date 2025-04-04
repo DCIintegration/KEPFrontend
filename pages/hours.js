@@ -1,350 +1,556 @@
-// pages/dashboard.js
-import { useState } from 'react';
+// pages/metricas.js
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
+import Head from 'next/head';
 
-export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState('horas'); // 'horas' o 'salarios'
+export default function MetricasPage() {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  
+  // Authentication check
+  useEffect(() => {
+    const checkAuth = setTimeout(() => {
+      setIsAuthChecking(false);
+    }, 100);
+    
+    return () => clearTimeout(checkAuth);
+  }, []);
+  
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthChecking && !user) {
+      router.push('/login');
+    }
+  }, [user, router, isAuthChecking]);
 
-  return (
-    <Layout>
-      <div className="container">
-        <h1 className="title">Portal de KPIs</h1>
+  // Mostrar estado de carga durante la verificación de autenticación
+  if (!user || isAuthChecking) {
+    return (
+      <div className="loading-screen">
+        <div className="spinner"></div>
+        <p>Cargando...</p>
         
-        {/* Selector de Módulo */}
-        <div className="module-selector">
-          <div className="buttons">
-            <button 
-              className={`module-button ${activeTab === 'horas' ? 'active' : ''}`}
-              onClick={() => setActiveTab('horas')}
-            >
-              <span className="icon">⏱️</span>
-              <span>Control de Horas</span>
-            </button>
-            
-            <button 
-              className={`module-button ${activeTab === 'salarios' ? 'active' : ''}`}
-              onClick={() => setActiveTab('salarios')}
-            >
-              <span className="icon">💰</span>
-              <span>Control de Salarios</span>
-            </button>
-          </div>
+        <style jsx>{`
+          .loading-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f9fafc;
+          }
+          
+          .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(67, 97, 238, 0.2);
+            border-radius: 50%;
+            border-top-color: #4361ee;
+            animation: spin 1s linear infinite;
+          }
+          
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+          
+          p {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #555555;
+          }
+        `}</style>
+      </div>
+    );
+  }
+  
+  return (
+    <Layout title="Métricas Laborales | Panel de Control">
+      <div className="page-container">
+        <div className="page-header">
+          <h1>Métricas Laborales</h1>
+          <p>Gestión de indicadores de rendimiento laboral</p>
         </div>
         
-        {/* Contenido */}
-        <div className="content">
-          {activeTab === 'horas' && <HorasModule />}
-          {activeTab === 'salarios' && <SalariosModule />}
+        <div className="content-container">
+          <MetricasLaborales />
         </div>
       </div>
       
       <style jsx>{`
-        .container {
-          max-width: 1200px;
-          margin: 0 auto;
+        .page-container {
           padding: 20px;
         }
         
-        .title {
-          font-size: 28px;
-          margin-bottom: 20px;
-          color: #333;
-        }
-        
-        .module-selector {
+        .page-header {
           margin-bottom: 30px;
         }
         
-        .buttons {
-          display: flex;
-          gap: 20px;
-          justify-content: center;
+        .page-header h1 {
+          font-size: 24px;
+          color: #333;
+          margin: 0 0 8px 0;
         }
         
-        .module-button {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          width: 200px;
-          height: 120px;
-          border-radius: 10px;
-          border: 2px solid #e1e1e1;
-          background-color: white;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        .page-header p {
+          font-size: 16px;
+          color: #666;
+          margin: 0;
         }
         
-        .module-button:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-        }
-        
-        .module-button.active {
-          border-color: #4361ee;
-          background-color: #f0f4ff;
-        }
-        
-        .icon {
-          font-size: 28px;
-          margin-bottom: 8px;
-        }
-        
-        .content {
-          background-color: white;
-          border-radius: 10px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-          padding: 30px;
-        }
-        
-        @media (max-width: 600px) {
-          .buttons {
-            flex-direction: column;
-            align-items: center;
-          }
+        .content-container {
+          background-color: #fff;
+          border-radius: 8px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          padding: 24px;
         }
       `}</style>
     </Layout>
   );
 }
 
-function HorasModule() {
-  const [viewMode, setViewMode] = useState('areas');
+// Componente de Métricas Laborales
+function MetricasLaborales() {
+  // Lista de áreas disponibles
+  const areas = [
+    { id: 'todas', nombre: 'Todas las áreas' },
+    { id: 'ing', nombre: 'Ingeniería' },
+    { id: 'dis', nombre: 'Diseño' },
+    { id: 'adm', nombre: 'Administración' },
+    { id: 'sis', nombre: 'Sistemas' }
+  ];
   
-  // Datos iniciales para áreas
-  const [areas, setAreas] = useState([
-    { id: 1, nombre: 'Ingeniería', horas: 120, editable: false },
-    { id: 2, nombre: 'Sistemas', horas: 85, editable: true },
-    { id: 3, nombre: 'Diseño', horas: 95, editable: false },
-    { id: 4, nombre: 'Administración', horas: 75, editable: true }
-  ]);
+  // Estado para el área seleccionada
+  const [selectedArea, setSelectedArea] = useState('todas');
   
-  // Datos iniciales para empleados
-  const [empleados, setEmpleados] = useState([
-    { id: 1, nombre: 'Empleado 1', horas: 45, area: 'Ingeniería' },
-    { id: 2, nombre: 'Empleado 2', horas: 40, area: 'Diseño' },
-    { id: 3, nombre: 'Empleado 3', horas: 37, area: 'Ingeniería' },
-    { id: 4, nombre: 'Empleado 4', horas: 38, area: 'Diseño' }
-  ]);
-  
-  // Filtrar áreas no editables (las que necesitan desglose por empleado)
-  const areasNoEditables = areas.filter(area => !area.editable);
-  
-  // Estado para el área seleccionada en la vista de empleados
-  const [selectedArea, setSelectedArea] = useState('Ingeniería');
-  
-  // Filtrar empleados por área seleccionada
-  const empleadosFiltrados = empleados.filter(emp => emp.area === selectedArea);
-  
-  // Función para actualizar horas de un área editable
-  const updateAreaHoras = (id, nuevasHoras) => {
-    setAreas(areas.map(area => 
-      area.id === id ? {...area, horas: parseInt(nuevasHoras) || 0} : area
-    ));
+  // Datos de métricas por área
+  const metricasPorArea = {
+    'todas': {
+      ingresoLaboralDirecto: 85000,
+      ingresoLaboralIndirecto: 35000, 
+      numeroTotalEmpleados: 25,
+      ingresoLaboral: 120000,
+      cantidadEmpleadosFacturables: 18,
+      horasLaboralesDirectas: 2800,
+      horasTotalesLaborales: 4000,
+      dolaresLaboralesDirectos: 75000,
+      dolaresTotalesLaborales: 110000,
+      costoLaboralDirecto: 65000,
+      ingresoTotal: 150000
+    },
+    'ing': {
+      ingresoLaboralDirecto: 45000,
+      ingresoLaboralIndirecto: 15000, 
+      numeroTotalEmpleados: 12,
+      ingresoLaboral: 60000,
+      cantidadEmpleadosFacturables: 10,
+      horasLaboralesDirectas: 1600,
+      horasTotalesLaborales: 1920,
+      dolaresLaboralesDirectos: 42000,
+      dolaresTotalesLaborales: 55000,
+      costoLaboralDirecto: 38000,
+      ingresoTotal: 72000
+    },
+    'dis': {
+      ingresoLaboralDirecto: 15000,
+      ingresoLaboralIndirecto: 8000, 
+      numeroTotalEmpleados: 5,
+      ingresoLaboral: 23000,
+      cantidadEmpleadosFacturables: 3,
+      horasLaboralesDirectas: 480,
+      horasTotalesLaborales: 800,
+      dolaresLaboralesDirectos: 12000,
+      dolaresTotalesLaborales: 18000,
+      costoLaboralDirecto: 10000,
+      ingresoTotal: 26000
+    },
+    'adm': {
+      ingresoLaboralDirecto: 8000,
+      ingresoLaboralIndirecto: 7000, 
+      numeroTotalEmpleados: 4,
+      ingresoLaboral: 15000,
+      cantidadEmpleadosFacturables: 2,
+      horasLaboralesDirectas: 320,
+      horasTotalesLaborales: 640,
+      dolaresLaboralesDirectos: 6000,
+      dolaresTotalesLaborales: 15000,
+      costoLaboralDirecto: 5000,
+      ingresoTotal: 18000
+    },
+    'sis': {
+      ingresoLaboralDirecto: 17000,
+      ingresoLaboralIndirecto: 5000, 
+      numeroTotalEmpleados: 4,
+      ingresoLaboral: 22000,
+      cantidadEmpleadosFacturables: 3,
+      horasLaboralesDirectas: 400,
+      horasTotalesLaborales: 640,
+      dolaresLaboralesDirectos: 15000,
+      dolaresTotalesLaborales: 22000,
+      costoLaboralDirecto: 12000,
+      ingresoTotal: 34000
+    }
   };
   
-  // Función para actualizar horas de un empleado
-  const updateEmpleadoHoras = (id, nuevasHoras) => {
-    const nuevoValor = parseInt(nuevasHoras) || 0;
-    
-    // Actualizar empleado
-    const nuevosEmpleados = empleados.map(emp => 
-      emp.id === id ? {...emp, horas: nuevoValor} : emp
-    );
-    setEmpleados(nuevosEmpleados);
-    
-    // Actualizar áreas automáticas (no editables)
-    setAreas(areas.map(area => {
-      if (area.editable) return area;
-      
-      // Calcular suma de horas para el área
-      const horasTotales = nuevosEmpleados
-        .filter(emp => emp.area === area.nombre)
-        .reduce((total, emp) => total + emp.horas, 0);
-      
-      return {...area, horas: horasTotales};
-    }));
-  };
+  // Estado para las métricas actuales
+  const [metricas, setMetricas] = useState(metricasPorArea['todas']);
   
-  // Función para agregar un nuevo empleado
-  const agregarEmpleado = () => {
-    // Obtener el ID más alto actual y sumar 1
-    const nuevoId = Math.max(...empleados.map(emp => emp.id)) + 1;
+  // Actualizar métricas al cambiar de área
+  useEffect(() => {
+    setMetricas({...metricasPorArea[selectedArea]});
+  }, [selectedArea]);
+
+  // Actualizar el valor de una métrica
+  const updateMetrica = (campo, valor) => {
+    const nuevoValor = parseInt(valor) || 0;
     
-    // Crear nuevo empleado
-    const nuevoEmpleado = {
-      id: nuevoId,
-      nombre: `Nuevo Empleado`,
-      horas: 0,
-      area: selectedArea
+    // Actualizar el estado local
+    setMetricas({
+      ...metricas,
+      [campo]: nuevoValor
+    });
+    
+    // También actualizar en el objeto de datos por área
+    metricasPorArea[selectedArea] = {
+      ...metricasPorArea[selectedArea],
+      [campo]: nuevoValor
     };
-    
-    // Actualizar el estado con el nuevo empleado
-    const nuevosEmpleados = [...empleados, nuevoEmpleado];
-    setEmpleados(nuevosEmpleados);
+  };
+  
+  // Función para reiniciar los valores
+  const resetearValores = () => {
+    // Podríamos tener valores predeterminados para reiniciar
+    // Por ahora, simplemente recargamos los valores actuales del área
+    setMetricas({...metricasPorArea[selectedArea]});
+  };
+  
+  // Función para guardar cambios (simulada)
+  const guardarCambios = () => {
+    // En una aplicación real, aquí enviaríamos los datos al servidor
+    alert('Cambios guardados correctamente');
   };
 
   return (
-    <div>
-      <h2>Control de Horas</h2>
-      
-      <div className="view-selector">
-        <button 
-          className={viewMode === 'areas' ? 'active' : ''}
-          onClick={() => setViewMode('areas')}
+    <div className="metricas-container">
+      {/* Selector de área */}
+      <div className="area-selector">
+        <label htmlFor="area-select">Filtrar por área:</label>
+        <select 
+          id="area-select"
+          value={selectedArea}
+          onChange={(e) => setSelectedArea(e.target.value)}
         >
-          Por Áreas
-        </button>
-        <button 
-          className={viewMode === 'empleados' ? 'active' : ''}
-          onClick={() => setViewMode('empleados')}
-        >
-          Por Empleados
-        </button>
+          {areas.map(area => (
+            <option key={area.id} value={area.id}>{area.nombre}</option>
+          ))}
+        </select>
       </div>
       
-      {viewMode === 'areas' ? (
-        <div className="areas-container">
-          <h3>Horas por Área</h3>
+      <div className="metricas-grid">
+        <div className="metrica-card">
+          <h4>Ingresos</h4>
           
-          <div className="areas-grid">
-            {areas.map(area => (
-              <div key={area.id} className="area-card">
-                <h4>{area.nombre}</h4>
-                <div className="input-group">
-                  <label>Horas Totales</label>
-                  <input 
-                    type="number"
-                    value={area.horas}
-                    onChange={(e) => area.editable && updateAreaHoras(area.id, e.target.value)}
-                    disabled={!area.editable}
-                    className={area.editable ? '' : 'disabled'}
-                  />
-                </div>
-              </div>
-            ))}
+          <div className="input-group">
+            <label>Ingreso Laboral Directo</label>
+            <input 
+              type="number"
+              value={metricas.ingresoLaboralDirecto}
+              onChange={(e) => updateMetrica('ingresoLaboralDirecto', e.target.value)}
+            />
+          </div>
+          
+          <div className="input-group">
+            <label>Ingreso Laboral Indirecto</label>
+            <input 
+              type="number"
+              value={metricas.ingresoLaboralIndirecto}
+              onChange={(e) => updateMetrica('ingresoLaboralIndirecto', e.target.value)}
+            />
+          </div>
+          
+          <div className="input-group">
+            <label>Ingreso Laboral</label>
+            <input 
+              type="number"
+              value={metricas.ingresoLaboral}
+              onChange={(e) => updateMetrica('ingresoLaboral', e.target.value)}
+            />
+          </div>
+          
+          <div className="input-group">
+            <label>Ingreso Total</label>
+            <input 
+              type="number"
+              value={metricas.ingresoTotal}
+              onChange={(e) => updateMetrica('ingresoTotal', e.target.value)}
+            />
           </div>
         </div>
-      ) : (
-        <div className="empleados-container">
-          <h3>Horas por Empleado</h3>
+        
+        <div className="metrica-card">
+          <h4>Empleados</h4>
           
-          <div className="area-selector">
-            <label>Seleccionar área:</label>
-            <select 
-              value={selectedArea}
-              onChange={(e) => setSelectedArea(e.target.value)}
-            >
-              {areasNoEditables.map(area => (
-                <option key={area.id} value={area.nombre}>{area.nombre}</option>
-              ))}
-            </select>
+          <div className="input-group">
+            <label>Número Total de Empleados</label>
+            <input 
+              type="number"
+              value={metricas.numeroTotalEmpleados}
+              onChange={(e) => updateMetrica('numeroTotalEmpleados', e.target.value)}
+            />
           </div>
           
-          <div className="empleados-list">
-            {empleadosFiltrados.map(empleado => (
-              <div key={empleado.id} className="empleado-card">
-                <h4>Empleado #{empleado.id}</h4>
-                <div className="form-row">
-                  <div className="input-group">
-                    <label>Nombre</label>
-                    <input 
-                      type="text"
-                      value={empleado.nombre}
-                      onChange={(e) => {
-                        setEmpleados(empleados.map(emp => 
-                          emp.id === empleado.id ? {...emp, nombre: e.target.value} : emp
-                        ));
-                      }}
-                    />
-                  </div>
-                  <div className="input-group">
-                    <label>Horas</label>
-                    <input 
-                      type="number"
-                      value={empleado.horas}
-                      onChange={(e) => updateEmpleadoHoras(empleado.id, e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-            
-            <button 
-              className="add-button"
-              onClick={agregarEmpleado}
-            >
-              + Agregar Empleado
-            </button>
+          <div className="input-group">
+            <label>Cantidad de Empleados Facturables</label>
+            <input 
+              type="number"
+              value={metricas.cantidadEmpleadosFacturables}
+              onChange={(e) => updateMetrica('cantidadEmpleadosFacturables', e.target.value)}
+            />
+          </div>
+        </div>
+        
+        <div className="metrica-card">
+          <h4>Horas</h4>
+          
+          <div className="input-group">
+            <label>Horas Laborales Directas</label>
+            <input 
+              type="number"
+              value={metricas.horasLaboralesDirectas}
+              onChange={(e) => updateMetrica('horasLaboralesDirectas', e.target.value)}
+            />
+          </div>
+          
+          <div className="input-group">
+            <label>Horas Totales Laborales</label>
+            <input 
+              type="number"
+              value={metricas.horasTotalesLaborales}
+              onChange={(e) => updateMetrica('horasTotalesLaborales', e.target.value)}
+            />
+          </div>
+        </div>
+        
+        <div className="metrica-card">
+          <h4>Costos</h4>
+          
+          <div className="input-group">
+            <label>Dólares Laborales Directos</label>
+            <input 
+              type="number"
+              value={metricas.dolaresLaboralesDirectos}
+              onChange={(e) => updateMetrica('dolaresLaboralesDirectos', e.target.value)}
+            />
+          </div>
+          
+          <div className="input-group">
+            <label>Dólares Totales Laborales</label>
+            <input 
+              type="number"
+              value={metricas.dolaresTotalesLaborales}
+              onChange={(e) => updateMetrica('dolaresTotalesLaborales', e.target.value)}
+            />
+          </div>
+          
+          <div className="input-group">
+            <label>Costo Laboral Directo</label>
+            <input 
+              type="number"
+              value={metricas.costoLaboralDirecto}
+              onChange={(e) => updateMetrica('costoLaboralDirecto', e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+      
+      <div className="buttons-container">
+        <button className="save-button" onClick={guardarCambios}>
+          Guardar Cambios
+        </button>
+        <button className="reset-button" onClick={resetearValores}>
+          Reiniciar
+        </button>
+      </div>
+
+      <div className="summary-container">
+        <h3>Resumen de Métricas{selectedArea !== 'todas' ? ` - ${areas.find(a => a.id === selectedArea).nombre}` : ''}</h3>
+        
+        <div className="summary-grid">
+          <div className="summary-item">
+            <div className="summary-label">Utilización de Empleados</div>
+            <div className="summary-value">
+              {metricas.numeroTotalEmpleados > 0 
+                ? ((metricas.cantidadEmpleadosFacturables / metricas.numeroTotalEmpleados) * 100).toFixed(1) 
+                : 0}%
+            </div>
+            <div className="progress-bar">
+              <div 
+                className="progress-fill" 
+                style={{ 
+                  width: `${metricas.numeroTotalEmpleados > 0 
+                    ? ((metricas.cantidadEmpleadosFacturables / metricas.numeroTotalEmpleados) * 100) 
+                    : 0}%` 
+                }}
+              ></div>
+            </div>
+          </div>
+          
+          <div className="summary-item">
+            <div className="summary-label">Utilización de Horas</div>
+            <div className="summary-value">
+              {metricas.horasTotalesLaborales > 0 
+                ? ((metricas.horasLaboralesDirectas / metricas.horasTotalesLaborales) * 100).toFixed(1) 
+                : 0}%
+            </div>
+            <div className="progress-bar">
+              <div 
+                className="progress-fill" 
+                style={{ 
+                  width: `${metricas.horasTotalesLaborales > 0 
+                    ? ((metricas.horasLaboralesDirectas / metricas.horasTotalesLaborales) * 100) 
+                    : 0}%` 
+                }}
+              ></div>
+            </div>
+          </div>
+          
+          <div className="summary-item">
+            <div className="summary-label">Margen Bruto</div>
+            <div className="summary-value">
+              {metricas.ingresoLaboral > 0 
+                ? ((metricas.ingresoLaboral - metricas.dolaresTotalesLaborales) / metricas.ingresoLaboral * 100).toFixed(1) 
+                : 0}%
+            </div>
+            <div className="progress-bar">
+              <div 
+                className="progress-fill" 
+                style={{ 
+                  width: `${metricas.ingresoLaboral > 0 
+                    ? ((metricas.ingresoLaboral - metricas.dolaresTotalesLaborales) / metricas.ingresoLaboral * 100) 
+                    : 0}%`,
+                  backgroundColor: '#4ade80' 
+                }}
+              ></div>
+            </div>
+          </div>
+          
+          <div className="summary-item">
+            <div className="summary-label">Ingresos por Empleado</div>
+            <div className="summary-value">
+              ${metricas.numeroTotalEmpleados > 0 
+                ? Math.round(metricas.ingresoTotal / metricas.numeroTotalEmpleados).toLocaleString() 
+                : 0}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Tabla comparativa de áreas */}
+      {selectedArea === 'todas' && (
+        <div className="comparison-container">
+          <h3>Comparativa por Áreas</h3>
+          <div className="table-container">
+            <table className="comparison-table">
+              <thead>
+                <tr>
+                  <th>Área</th>
+                  <th>Ingresos</th>
+                  <th>Empleados</th>
+                  <th>Facturables</th>
+                  <th>Horas Directas</th>
+                  <th>Costos</th>
+                  <th>Margen</th>
+                </tr>
+              </thead>
+              <tbody>
+                {areas.filter(area => area.id !== 'todas').map(area => {
+                  const areaData = metricasPorArea[area.id];
+                  const margen = areaData.ingresoLaboral > 0 
+                    ? ((areaData.ingresoLaboral - areaData.dolaresTotalesLaborales) / areaData.ingresoLaboral * 100).toFixed(1)
+                    : 0;
+                    
+                  return (
+                    <tr key={area.id}>
+                      <td>{area.nombre}</td>
+                      <td>${areaData.ingresoTotal.toLocaleString()}</td>
+                      <td>{areaData.numeroTotalEmpleados}</td>
+                      <td>{areaData.cantidadEmpleadosFacturables} ({((areaData.cantidadEmpleadosFacturables / areaData.numeroTotalEmpleados) * 100).toFixed(0)}%)</td>
+                      <td>{areaData.horasLaboralesDirectas.toLocaleString()}</td>
+                      <td>${areaData.dolaresTotalesLaborales.toLocaleString()}</td>
+                      <td>
+                        <span className={parseFloat(margen) > 30 ? 'success' : parseFloat(margen) > 15 ? 'warning' : 'danger'}>
+                          {margen}%
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
       
       <style jsx>{`
-        h2 {
-          font-size: 24px;
-          margin-bottom: 20px;
-          color: #333;
+        .metricas-container {
+          margin-top: 20px;
         }
         
-        h3 {
-          font-size: 20px;
-          margin-bottom: 20px;
-          color: #555;
-        }
-        
-        .view-selector {
+        .area-selector {
           display: flex;
-          margin-bottom: 30px;
-          border-bottom: 1px solid #e1e1e1;
+          align-items: center;
+          gap: 15px;
+          margin-bottom: 25px;
+          background-color: #f8fafc;
+          padding: 15px;
+          border-radius: 8px;
         }
         
-        .view-selector button {
-          background: none;
-          border: none;
-          padding: 12px 24px;
-          font-size: 16px;
-          cursor: pointer;
-          position: relative;
-        }
-        
-        .view-selector button.active {
-          color: #4361ee;
+        .area-selector label {
           font-weight: 500;
+          color: #475569;
         }
         
-        .view-selector button.active:after {
-          content: '';
-          position: absolute;
-          bottom: -1px;
-          left: 0;
-          width: 100%;
-          height: 3px;
-          background-color: #4361ee;
+        .area-selector select {
+          padding: 10px 15px;
+          border: 1px solid #ddd;
+          border-radius: 5px;
+          font-size: 16px;
+          min-width: 200px;
         }
         
-        .areas-grid {
+        .metricas-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
           gap: 20px;
+          margin-bottom: 30px;
         }
         
-        .area-card {
+        .metrica-card {
           border: 1px solid #e1e1e1;
           border-radius: 8px;
           padding: 20px;
           transition: box-shadow 0.3s;
         }
         
-        .area-card:hover {
+        .metrica-card:hover {
           box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .metrica-card h4 {
+          font-size: 18px;
+          margin-bottom: 15px;
+          color: #4361ee;
+          padding-bottom: 8px;
+          border-bottom: 1px solid #e1e1e1;
         }
         
         .input-group {
           display: flex;
           flex-direction: column;
-          margin-top: 15px;
+          margin-bottom: 15px;
         }
         
         .input-group label {
@@ -360,374 +566,170 @@ function HorasModule() {
           font-size: 16px;
         }
         
-        .input-group input.disabled {
-          background-color: #f8f9fa;
-          color: #6c757d;
-        }
-        
-        .area-selector {
+        .buttons-container {
           display: flex;
-          align-items: center;
-          margin-bottom: 20px;
-          gap: 10px;
+          gap: 15px;
+          margin-bottom: 30px;
         }
         
-        .area-selector select {
-          padding: 10px;
-          border: 1px solid #ddd;
-          border-radius: 5px;
-          font-size: 16px;
-          min-width: 200px;
-        }
-        
-        .empleado-card {
-          border: 1px solid #e1e1e1;
-          border-radius: 8px;
-          padding: 20px;
-          margin-bottom: 20px;
-        }
-        
-        .form-row {
-          display: flex;
-          gap: 20px;
-        }
-        
-        .form-row .input-group {
-          flex: 1;
-        }
-        
-        .add-button {
+        .save-button {
           background-color: #4361ee;
           color: white;
           border: none;
           border-radius: 5px;
-          padding: 12px 20px;
+          padding: 12px 24px;
           font-size: 16px;
           cursor: pointer;
-          margin-top: 10px;
           transition: background-color 0.3s;
         }
         
-        .add-button:hover {
+        .save-button:hover {
           background-color: #3651d4;
         }
         
+        .reset-button {
+          background-color: #f1f5f9;
+          color: #475569;
+          border: 1px solid #e2e8f0;
+          border-radius: 5px;
+          padding: 12px 24px;
+          font-size: 16px;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+        
+        .reset-button:hover {
+          background-color: #e2e8f0;
+        }
+        
+        .summary-container {
+          background-color: #f8fafc;
+          border-radius: 8px;
+          padding: 24px;
+          margin-top: 20px;
+          margin-bottom: 30px;
+        }
+        
+        .summary-container h3 {
+          font-size: 18px;
+          color: #333;
+          margin-bottom: 20px;
+        }
+        
+        .summary-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 20px;
+        }
+        
+        .summary-item {
+          background-color: white;
+          border-radius: 8px;
+          padding: 16px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .summary-label {
+          font-size: 14px;
+          color: #64748b;
+          margin-bottom: 8px;
+        }
+        
+        .summary-value {
+          font-size: 22px;
+          font-weight: 600;
+          color: #334155;
+          margin-bottom: 8px;
+        }
+        
+        .progress-bar {
+          height: 8px;
+          background-color: #e2e8f0;
+          border-radius: 4px;
+          overflow: hidden;
+        }
+        
+        .progress-fill {
+          height: 100%;
+          background-color: #4361ee;
+          border-radius: 4px;
+        }
+        
+        /* Estilos para la tabla comparativa */
+        .comparison-container {
+          background-color: #f8fafc;
+          border-radius: 8px;
+          padding: 24px;
+          margin-top: 20px;
+        }
+        
+        .comparison-container h3 {
+          font-size: 18px;
+          color: #333;
+          margin-bottom: 20px;
+        }
+        
+        .table-container {
+          overflow-x: auto;
+        }
+        
+        .comparison-table {
+          width: 100%;
+          border-collapse: collapse;
+          border-spacing: 0;
+        }
+        
+        .comparison-table th,
+        .comparison-table td {
+          padding: 12px 15px;
+          text-align: left;
+          border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .comparison-table th {
+          background-color: #f1f5f9;
+          font-weight: 600;
+          color: #475569;
+        }
+        
+        .comparison-table tr:hover {
+          background-color: #f8fafc;
+        }
+        
+        .success {
+          color: #16a34a;
+        }
+        
+        .warning {
+          color: #ca8a04;
+        }
+        
+        .danger {
+          color: #dc2626;
+        }
+        
         @media (max-width: 768px) {
-          .form-row {
+          .metricas-grid,
+          .summary-grid {
+            grid-template-columns: 1fr;
+          }
+          
+          .buttons-container {
             flex-direction: column;
           }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-function SalariosModule() {
-  const [viewMode, setViewMode] = useState('areas');
-  
-  // Datos iniciales para áreas
-  const [areas, setAreas] = useState([
-    { id: 1, nombre: 'Ingeniería', salario: 85000, editable: false },
-    { id: 2, nombre: 'Sistemas', salario: 72000, editable: true },
-    { id: 3, nombre: 'Diseño', salario: 68000, editable: false },
-    { id: 4, nombre: 'Administración', salario: 60000, editable: true }
-  ]);
-  
-  // Datos iniciales para empleados
-  const [empleados, setEmpleados] = useState([
-    { id: 1, nombre: 'Empleado 1', salario: 45000, area: 'Ingeniería' },
-    { id: 2, nombre: 'Empleado 2', salario: 40000, area: 'Diseño' },
-    { id: 3, nombre: 'Empleado 3', salario: 40000, area: 'Ingeniería' },
-    { id: 4, nombre: 'Empleado 4', salario: 28000, area: 'Diseño' }
-  ]);
-  
-  // Filtrar áreas no editables (las que necesitan desglose por empleado)
-  const areasNoEditables = areas.filter(area => !area.editable);
-  
-  // Estado para el área seleccionada en la vista de empleados
-  const [selectedArea, setSelectedArea] = useState('Ingeniería');
-  
-  // Filtrar empleados por área seleccionada
-  const empleadosFiltrados = empleados.filter(emp => emp.area === selectedArea);
-  
-  // Función para actualizar salario de un área editable
-  const updateAreaSalario = (id, nuevoSalario) => {
-    setAreas(areas.map(area => 
-      area.id === id ? {...area, salario: parseInt(nuevoSalario) || 0} : area
-    ));
-  };
-  
-  // Función para actualizar salario de un empleado
-  const updateEmpleadoSalario = (id, nuevoSalario) => {
-    const nuevoValor = parseInt(nuevoSalario) || 0;
-    
-    // Actualizar empleado
-    const nuevosEmpleados = empleados.map(emp => 
-      emp.id === id ? {...emp, salario: nuevoValor} : emp
-    );
-    setEmpleados(nuevosEmpleados);
-    
-    // Actualizar áreas automáticas (no editables)
-    setAreas(areas.map(area => {
-      if (area.editable) return area;
-      
-      // Calcular suma de salarios para el área
-      const salarioTotal = nuevosEmpleados
-        .filter(emp => emp.area === area.nombre)
-        .reduce((total, emp) => total + emp.salario, 0);
-      
-      return {...area, salario: salarioTotal};
-    }));
-  };
-  
-  // Función para agregar un nuevo empleado
-  const agregarEmpleado = () => {
-    // Obtener el ID más alto actual y sumar 1
-    const nuevoId = Math.max(...empleados.map(emp => emp.id)) + 1;
-    
-    // Crear nuevo empleado
-    const nuevoEmpleado = {
-      id: nuevoId,
-      nombre: `Nuevo Empleado`,
-      salario: 0,
-      area: selectedArea
-    };
-    
-    // Actualizar el estado con el nuevo empleado
-    const nuevosEmpleados = [...empleados, nuevoEmpleado];
-    setEmpleados(nuevosEmpleados);
-  };
-
-  return (
-    <div>
-      <h2>Control de Salarios</h2>
-      
-      <div className="view-selector">
-        <button 
-          className={viewMode === 'areas' ? 'active' : ''}
-          onClick={() => setViewMode('areas')}
-        >
-          Por Áreas
-        </button>
-        <button 
-          className={viewMode === 'empleados' ? 'active' : ''}
-          onClick={() => setViewMode('empleados')}
-        >
-          Por Empleados
-        </button>
-      </div>
-      
-      {viewMode === 'areas' ? (
-        <div className="areas-container">
-          <h3>Salarios por Área</h3>
           
-          <div className="areas-grid">
-            {areas.map(area => (
-              <div key={area.id} className="area-card">
-                <h4>{area.nombre}</h4>
-                <div className="input-group">
-                  <label>Salario Total</label>
-                  <input 
-                    type="number"
-                    value={area.salario}
-                    onChange={(e) => area.editable && updateAreaSalario(area.id, e.target.value)}
-                    disabled={!area.editable}
-                    className={area.editable ? '' : 'disabled'}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="empleados-container">
-          <h3>Salarios por Empleado</h3>
+          .save-button,
+          .reset-button {
+            width: 100%;
+          }
           
-          <div className="area-selector">
-            <label>Seleccionar área:</label>
-            <select 
-              value={selectedArea}
-              onChange={(e) => setSelectedArea(e.target.value)}
-            >
-              {areasNoEditables.map(area => (
-                <option key={area.id} value={area.nombre}>{area.nombre}</option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="empleados-list">
-            {empleadosFiltrados.map(empleado => (
-              <div key={empleado.id} className="empleado-card">
-                <h4>Empleado #{empleado.id}</h4>
-                <div className="form-row">
-                  <div className="input-group">
-                    <label>Nombre</label>
-                    <input 
-                      type="text"
-                      value={empleado.nombre}
-                      onChange={(e) => {
-                        setEmpleados(empleados.map(emp => 
-                          emp.id === empleado.id ? {...emp, nombre: e.target.value} : emp
-                        ));
-                      }}
-                    />
-                  </div>
-                  <div className="input-group">
-                    <label>Salario</label>
-                    <input 
-                      type="number"
-                      value={empleado.salario}
-                      onChange={(e) => updateEmpleadoSalario(empleado.id, e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-            
-            <button 
-              className="add-button"
-              onClick={agregarEmpleado}
-            >
-              + Agregar Empleado
-            </button>
-          </div>
-        </div>
-      )}
-      
-      <style jsx>{`
-        h2 {
-          font-size: 24px;
-          margin-bottom: 20px;
-          color: #333;
-        }
-        
-        h3 {
-          font-size: 20px;
-          margin-bottom: 20px;
-          color: #555;
-        }
-        
-        .view-selector {
-          display: flex;
-          margin-bottom: 30px;
-          border-bottom: 1px solid #e1e1e1;
-        }
-        
-        .view-selector button {
-          background: none;
-          border: none;
-          padding: 12px 24px;
-          font-size: 16px;
-          cursor: pointer;
-          position: relative;
-        }
-        
-        .view-selector button.active {
-          color: #4361ee;
-          font-weight: 500;
-        }
-        
-        .view-selector button.active:after {
-          content: '';
-          position: absolute;
-          bottom: -1px;
-          left: 0;
-          width: 100%;
-          height: 3px;
-          background-color: #4361ee;
-        }
-        
-        .areas-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-          gap: 20px;
-        }
-        
-        .area-card {
-          border: 1px solid #e1e1e1;
-          border-radius: 8px;
-          padding: 20px;
-          transition: box-shadow 0.3s;
-        }
-        
-        .area-card:hover {
-          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-        }
-        
-        .input-group {
-          display: flex;
-          flex-direction: column;
-          margin-top: 15px;
-        }
-        
-        .input-group label {
-          font-size: 14px;
-          color: #666;
-          margin-bottom: 5px;
-        }
-        
-        .input-group input {
-          padding: 10px;
-          border: 1px solid #ddd;
-          border-radius: 5px;
-          font-size: 16px;
-        }
-        
-        .input-group input.disabled {
-          background-color: #f8f9fa;
-          color: #6c757d;
-        }
-        
-        .area-selector {
-          display: flex;
-          align-items: center;
-          margin-bottom: 20px;
-          gap: 10px;
-        }
-        
-        .area-selector select {
-          padding: 10px;
-          border: 1px solid #ddd;
-          border-radius: 5px;
-          font-size: 16px;
-          min-width: 200px;
-        }
-        
-        .empleado-card {
-          border: 1px solid #e1e1e1;
-          border-radius: 8px;
-          padding: 20px;
-          margin-bottom: 20px;
-        }
-        
-        .form-row {
-          display: flex;
-          gap: 20px;
-        }
-        
-        .form-row .input-group {
-          flex: 1;
-        }
-        
-        .add-button {
-          background-color: #4361ee;
-          color: white;
-          border: none;
-          border-radius: 5px;
-          padding: 12px 20px;
-          font-size: 16px;
-          cursor: pointer;
-          margin-top: 10px;
-          transition: background-color 0.3s;
-        }
-        
-        .add-button:hover {
-          background-color: #3651d4;
-        }
-        
-        @media (max-width: 768px) {
-          .form-row {
+          .area-selector {
             flex-direction: column;
+            align-items: flex-start;
+          }
+          
+          .area-selector select {
+            width: 100%;
           }
         }
       `}</style>

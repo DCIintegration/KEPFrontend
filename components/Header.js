@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '../context/AuthContext';
 
 export default function Header() {
   const { user, logout } = useAuth();
   const router = useRouter();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
   
   // Check scroll position for styling
   useEffect(() => {
@@ -22,6 +24,20 @@ export default function Header() {
     };
   }, []);
   
+  // Handle dropdown click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+  
   // Handle logout
   const handleLogout = async () => {
     try {
@@ -32,61 +48,51 @@ export default function Header() {
     }
   };
   
-  // Toggle mobile menu
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-  
   return (
     <header className={`header ${isScrolled ? 'scrolled' : ''}`}>
       <div className="header-container">
         <div className="logo">
           <Link href={user ? '/dashboard' : '/'}>
-            <span className="logo-text">Portal Web</span>
+            <div className="logo-image">
+              <img src="/DCIlogo.png" alt="DCI Logo" width={140} height={40} />
+            </div>
           </Link>
         </div>
         
         {user && (
-          <>
-            <button 
-              className="menu-toggle" 
-              onClick={toggleMenu}
-              aria-label="Alternar menú"
-            >
-              <span className={`menu-icon ${isMenuOpen ? 'open' : ''}`}></span>
-            </button>
+          <div className="nav-actions">
+            {/* Dropdown de Configuración */}
+            <div className="config-dropdown" ref={dropdownRef}>
+              <button 
+                className="config-button" 
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+                <span>Configuración</span>
+              </button>
+              
+              {dropdownOpen && (
+                <div className="dropdown-menu">
+                  <div className="dropdown-item">Perfil de Usuario</div>
+                  <div className="dropdown-item">Preferencias</div>
+                  <div className="dropdown-item">Notificaciones</div>
+                  <div className="dropdown-item">Apariencia</div>
+                </div>
+              )}
+            </div>
             
-            <nav className={`nav-menu ${isMenuOpen ? 'open' : ''}`}>
-              <ul className="nav-list">
-                <li className="nav-item">
-                  <Link href="/dashboard">
-                    <span className={router.pathname === '/dashboard' ? 'active' : ''}>
-                      Panel de Control
-                    </span>
-                  </Link>
-                </li>
-                <li className="nav-item">
-                  <Link href="/profile">
-                    <span className={router.pathname === '/profile' ? 'active' : ''}>
-                      Perfil
-                    </span>
-                  </Link>
-                </li>
-                <li className="nav-item">
-                  <Link href="/settings">
-                    <span className={router.pathname === '/settings' ? 'active' : ''}>
-                      Configuración
-                    </span>
-                  </Link>
-                </li>
-                <li className="nav-item">
-                  <button className="logout-button" onClick={handleLogout}>
-                    Cerrar Sesión
-                  </button>
-                </li>
-              </ul>
-            </nav>
-          </>
+            <button className="logout-button" onClick={handleLogout}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+              <span>Cerrar Sesión</span>
+            </button>
+          </div>
         )}
       </div>
       
@@ -97,16 +103,15 @@ export default function Header() {
           left: 0;
           width: 100%;
           height: 70px;
-          background-color: rgba(255, 255, 255, 0.9);
-          backdrop-filter: blur(10px);
-          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+          background-color: #ffffff;
+          border-bottom: 1px solid #e0e0e0;
           z-index: 1000;
           transition: all 0.3s ease;
         }
         
         .header.scrolled {
           height: 60px;
-          box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
         }
         
         .header-container {
@@ -124,149 +129,99 @@ export default function Header() {
           align-items: center;
         }
         
-        .logo-text {
-          font-size: 22px;
-          font-weight: 700;
-          color: #4361ee;
+        .logo-image {
           cursor: pointer;
-        }
-        
-        .nav-menu {
           display: flex;
+          align-items: center;
+          height: 40px;
         }
         
-        .nav-list {
+        .logo-image img {
+          max-height: 100%;
+          width: auto;
+          object-fit: contain;
+        }
+        
+        .nav-actions {
           display: flex;
-          list-style: none;
+          align-items: center;
+          gap: 16px;
         }
         
-        .nav-item {
-          margin-left: 30px;
-        }
-        
-        .nav-item span {
-          font-size: 16px;
-          color: #555555;
-          cursor: pointer;
-          transition: color 0.3s;
+        .config-dropdown {
           position: relative;
         }
         
-        .nav-item span:hover,
-        .nav-item span.active {
+        .config-button {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: none;
+          border: none;
+          font-size: 16px;
+          color: #555555;
+          cursor: pointer;
+          padding: 8px 12px;
+          border-radius: 4px;
+          transition: background-color 0.2s;
+        }
+        
+        .config-button:hover {
+          background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        .dropdown-menu {
+          position: absolute;
+          top: calc(100% + 10px);
+          right: 0;
+          background-color: white;
+          border-radius: 8px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+          padding: 8px 0;
+          min-width: 180px;
+          z-index: 1001;
+          border: 1px solid #eee;
+        }
+        
+        .dropdown-item {
+          padding: 10px 16px;
+          color: #555;
+          cursor: pointer;
+          transition: background-color 0.2s;
+        }
+        
+        .dropdown-item:hover {
+          background-color: #f8f9fa;
           color: #4361ee;
         }
         
-        .nav-item span.active:after {
-          content: '';
-          position: absolute;
-          bottom: -5px;
-          left: 0;
-          width: 100%;
-          height: 2px;
-          background-color: #4361ee;
-        }
-        
         .logout-button {
+          display: flex;
+          align-items: center;
+          gap: 6px;
           background: none;
           border: none;
           font-size: 16px;
           color: #f72585;
           cursor: pointer;
-          transition: color 0.3s;
+          padding: 8px 12px;
+          border-radius: 4px;
+          transition: all 0.3s;
         }
         
         .logout-button:hover {
-          color: #b5179e;
-        }
-        
-        .menu-toggle {
-          display: none;
-          background: none;
-          border: none;
-          width: 30px;
-          height: 30px;
-          position: relative;
-          cursor: pointer;
-        }
-        
-        .menu-icon,
-        .menu-icon:before,
-        .menu-icon:after {
-          width: 30px;
-          height: 3px;
-          background-color: #333333;
-          position: absolute;
-          transition: all 0.3s ease;
-        }
-        
-        .menu-icon {
-          top: 14px;
-        }
-        
-        .menu-icon:before {
-          content: '';
-          top: -8px;
-        }
-        
-        .menu-icon:after {
-          content: '';
-          top: 8px;
-        }
-        
-        .menu-icon.open {
-          background-color: transparent;
-        }
-        
-        .menu-icon.open:before {
-          transform: rotate(45deg);
-          top: 0;
-        }
-        
-        .menu-icon.open:after {
-          transform: rotate(-45deg);
-          top: 0;
+          background-color: rgba(247, 37, 133, 0.1);
         }
         
         /* Responsive design */
         @media (max-width: 768px) {
-          .menu-toggle {
-            display: block;
-            z-index: 1001;
+          .nav-actions {
+            gap: 8px;
           }
           
-          .nav-menu {
-            position: fixed;
-            top: 0;
-            right: -100%;
-            width: 100%;
-            max-width: 300px;
-            height: 100vh;
-            background-color: #ffffff;
-            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
-            transition: right 0.3s ease;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-          }
-          
-          .nav-menu.open {
-            right: 0;
-          }
-          
-          .nav-list {
-            flex-direction: column;
-            align-items: center;
-            padding: 0;
-          }
-          
-          .nav-item {
-            margin: 15px 0;
-          }
-          
-          .nav-item span.active:after {
-            bottom: -3px;
+          .config-button span, 
+          .logout-button span {
+            display: none;
           }
         }
       `}</style>
