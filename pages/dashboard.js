@@ -30,7 +30,6 @@ export default function Dashboard() {
   const [activeModule, setActiveModule] = useState('horas'); // 'horas', 'salarios', o 'metricas'
   const [animating, setAnimating] = useState(false);
   
-<<<<<<< HEAD
   // Datos de métricas
   const [metricas, setMetricas] = useState({
     ingresoLaboralDirecto: 85000,
@@ -47,8 +46,6 @@ export default function Dashboard() {
   });
   
   // Authentication check
-=======
->>>>>>> 66cc198cb1fcfbd97c94b311cf41d80f886e7c62
   useEffect(() => {
     const checkAuth = setTimeout(() => {
       setIsAuthChecking(false);
@@ -175,12 +172,8 @@ export default function Dashboard() {
     
     return { headers, data };
   };
-<<<<<<< HEAD
 
   // Renderizar tabla según la sección activa
-=======
-  
->>>>>>> 66cc198cb1fcfbd97c94b311cf41d80f886e7c62
   const renderTable = () => {
     const { headers, data } = generateRandomData(8, 5);
     
@@ -442,7 +435,6 @@ export default function Dashboard() {
   }
   
   return (
-<<<<<<< HEAD
     <Layout title={`${activeSection === 'kpis' ? 'KPIs' : activeSection === 'admin' ? 'Administración' : activeSection === 'engineering' ? 'Ingeniería' : 'Portal de KPIs'} | Panel de Control`}>
       <div className="tabs-container">
         <div 
@@ -992,19 +984,6 @@ export default function Dashboard() {
           }
         }
       `}</style>
-=======
-    <Layout title="Panel de Control">
-      <div className={styles.tabsContainer}>
-        <div className={`${styles.tab} ${activeSection === 'kpis' ? styles.active : ''}`} onClick={() => changeSection('kpis')}>KPIs</div>
-        <div className={`${styles.tab} ${activeSection === 'admin' ? styles.active : ''}`} onClick={() => changeSection('admin')}>Administración</div>
-        <div className={`${styles.tab} ${activeSection === 'engineering' ? styles.active : ''}`} onClick={() => changeSection('engineering')}>Ingeniería</div>
-      </div>
-      
-      <div className={`${styles.sectionContainer} ${animating ? styles.fadeOut : styles.fadeIn}`}>
-        <h2>{activeSection.toUpperCase()}</h2>
-        <div className={styles.contentContainer}>{renderTable()}</div>
-      </div>
->>>>>>> 66cc198cb1fcfbd97c94b311cf41d80f886e7c62
     </Layout>
   );
 }
