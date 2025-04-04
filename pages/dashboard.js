@@ -1,3 +1,4 @@
+import styles from '../styles/dashboard.module.css';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../context/AuthContext';
@@ -29,6 +30,7 @@ export default function Dashboard() {
   const [activeModule, setActiveModule] = useState('horas'); // 'horas', 'salarios', o 'metricas'
   const [animating, setAnimating] = useState(false);
   
+<<<<<<< HEAD
   // Datos de métricas
   const [metricas, setMetricas] = useState({
     ingresoLaboralDirecto: 85000,
@@ -45,6 +47,8 @@ export default function Dashboard() {
   });
   
   // Authentication check
+=======
+>>>>>>> 66cc198cb1fcfbd97c94b311cf41d80f886e7c62
   useEffect(() => {
     const checkAuth = setTimeout(() => {
       setIsAuthChecking(false);
@@ -53,14 +57,12 @@ export default function Dashboard() {
     return () => clearTimeout(checkAuth);
   }, []);
   
-  // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthChecking && !user) {
       router.push('/login');
     }
   }, [user, router, isAuthChecking]);
 
-  // Función para cambiar de sección con animación
   const changeSection = (section) => {
     if (section === activeSection || animating) return;
     
@@ -115,12 +117,10 @@ export default function Dashboard() {
   // Colores para los gráficos
   const colores = ['#4361ee', '#3f37c9', '#0096c7', '#0077b6', '#48cae4'];
   
-  // Generar datos aleatorios para tablas
   const generateRandomData = (rows, columns) => {
     const data = [];
     const headers = [];
     
-    // Generar encabezados según la sección
     if (activeSection === 'kpis') {
       headers.push('Métrica', 'Actual', 'Objetivo', 'Variación', 'Estado');
     } else if (activeSection === 'admin') {
@@ -129,7 +129,6 @@ export default function Dashboard() {
       headers.push('Proyecto', 'Progreso', 'Horas', 'Equipo', 'Deadline');
     }
     
-    // Generar filas aleatorias
     for (let i = 0; i < rows; i++) {
       const row = [];
       
@@ -176,14 +175,18 @@ export default function Dashboard() {
     
     return { headers, data };
   };
+<<<<<<< HEAD
 
   // Renderizar tabla según la sección activa
+=======
+  
+>>>>>>> 66cc198cb1fcfbd97c94b311cf41d80f886e7c62
   const renderTable = () => {
     const { headers, data } = generateRandomData(8, 5);
     
     return (
-      <div className="table-container">
-        <table className="data-table">
+      <div className={styles.tableContainer}>
+        <table className={styles.dataTable}>
           <thead>
             <tr>
               {headers.map((header, index) => (
@@ -195,23 +198,7 @@ export default function Dashboard() {
             {data.map((row, rowIndex) => (
               <tr key={`row-${rowIndex}`}>
                 {row.map((cell, cellIndex) => (
-                  <td key={`cell-${rowIndex}-${cellIndex}`}>
-                    {cellIndex === 4 && activeSection === 'kpis' ? (
-                      <span className={`status ${cell === 'Cumplido' ? 'success' : 'warning'}`}>
-                        {cell}
-                      </span>
-                    ) : cellIndex === 1 && activeSection === 'engineering' ? (
-                      <div className="progress-bar-container">
-                        <div 
-                          className="progress-bar" 
-                          style={{ width: cell }}
-                        ></div>
-                        <span>{cell}</span>
-                      </div>
-                    ) : (
-                      cell
-                    )}
-                  </td>
+                  <td key={`cell-${rowIndex}-${cellIndex}`}>{cell}</td>
                 ))}
               </tr>
             ))}
@@ -445,47 +432,17 @@ export default function Dashboard() {
     );
   };
   
-  // Mostrar estado de carga durante la verificación de autenticación
   if (!user || isAuthChecking) {
     return (
-      <div className="loading-screen">
-        <div className="spinner"></div>
+      <div className={styles.loadingScreen}>
+        <div className={styles.spinner}></div>
         <p>Cargando...</p>
-        
-        <style jsx>{`
-          .loading-screen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-color: #f9fafc;
-          }
-          
-          .spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(67, 97, 238, 0.2);
-            border-radius: 50%;
-            border-top-color: #4361ee;
-            animation: spin 1s linear infinite;
-          }
-          
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-          
-          p {
-            margin-top: 20px;
-            font-size: 18px;
-            color: #555555;
-          }
-        `}</style>
       </div>
     );
   }
   
   return (
+<<<<<<< HEAD
     <Layout title={`${activeSection === 'kpis' ? 'KPIs' : activeSection === 'admin' ? 'Administración' : activeSection === 'engineering' ? 'Ingeniería' : 'Portal de KPIs'} | Panel de Control`}>
       <div className="tabs-container">
         <div 
@@ -1035,6 +992,19 @@ export default function Dashboard() {
           }
         }
       `}</style>
+=======
+    <Layout title="Panel de Control">
+      <div className={styles.tabsContainer}>
+        <div className={`${styles.tab} ${activeSection === 'kpis' ? styles.active : ''}`} onClick={() => changeSection('kpis')}>KPIs</div>
+        <div className={`${styles.tab} ${activeSection === 'admin' ? styles.active : ''}`} onClick={() => changeSection('admin')}>Administración</div>
+        <div className={`${styles.tab} ${activeSection === 'engineering' ? styles.active : ''}`} onClick={() => changeSection('engineering')}>Ingeniería</div>
+      </div>
+      
+      <div className={`${styles.sectionContainer} ${animating ? styles.fadeOut : styles.fadeIn}`}>
+        <h2>{activeSection.toUpperCase()}</h2>
+        <div className={styles.contentContainer}>{renderTable()}</div>
+      </div>
+>>>>>>> 66cc198cb1fcfbd97c94b311cf41d80f886e7c62
     </Layout>
   );
 }
