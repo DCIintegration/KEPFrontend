@@ -1,9 +1,10 @@
-// pages/metricas.js
+// pages/metricas.js with API integration
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
 import Head from 'next/head';
+import ApiService from '../api';
 
 export default function MetricasPage() {
   const { user } = useAuth();
@@ -125,82 +126,107 @@ function MetricasLaborales() {
   // Estado para el área seleccionada
   const [selectedArea, setSelectedArea] = useState('todas');
   
-  // Datos de métricas por área
-  const metricasPorArea = {
+  // Datos iniciales vacíos de métricas por área
+  const [metricasPorArea, setMetricasPorArea] = useState({
     'todas': {
-      ingresoLaboralDirecto: 85000,
-      ingresoLaboralIndirecto: 35000, 
-      numeroTotalEmpleados: 25,
-      ingresoLaboral: 120000,
-      cantidadEmpleadosFacturables: 18,
-      horasLaboralesDirectas: 2800,
-      horasTotalesLaborales: 4000,
-      dolaresLaboralesDirectos: 75000,
-      dolaresTotalesLaborales: 110000,
-      costoLaboralDirecto: 65000,
-      ingresoTotal: 150000
-    },
-    'ing': {
-      ingresoLaboralDirecto: 45000,
-      ingresoLaboralIndirecto: 15000, 
-      numeroTotalEmpleados: 12,
-      ingresoLaboral: 60000,
-      cantidadEmpleadosFacturables: 10,
-      horasLaboralesDirectas: 1600,
-      horasTotalesLaborales: 1920,
-      dolaresLaboralesDirectos: 42000,
-      dolaresTotalesLaborales: 55000,
-      costoLaboralDirecto: 38000,
-      ingresoTotal: 72000
-    },
-    'dis': {
-      ingresoLaboralDirecto: 15000,
-      ingresoLaboralIndirecto: 8000, 
-      numeroTotalEmpleados: 5,
-      ingresoLaboral: 23000,
-      cantidadEmpleadosFacturables: 3,
-      horasLaboralesDirectas: 480,
-      horasTotalesLaborales: 800,
-      dolaresLaboralesDirectos: 12000,
-      dolaresTotalesLaborales: 18000,
-      costoLaboralDirecto: 10000,
-      ingresoTotal: 26000
-    },
-    'adm': {
-      ingresoLaboralDirecto: 8000,
-      ingresoLaboralIndirecto: 7000, 
-      numeroTotalEmpleados: 4,
-      ingresoLaboral: 15000,
-      cantidadEmpleadosFacturables: 2,
-      horasLaboralesDirectas: 320,
-      horasTotalesLaborales: 640,
-      dolaresLaboralesDirectos: 6000,
-      dolaresTotalesLaborales: 15000,
-      costoLaboralDirecto: 5000,
-      ingresoTotal: 18000
-    },
-    'sis': {
-      ingresoLaboralDirecto: 17000,
-      ingresoLaboralIndirecto: 5000, 
-      numeroTotalEmpleados: 4,
-      ingresoLaboral: 22000,
-      cantidadEmpleadosFacturables: 3,
-      horasLaboralesDirectas: 400,
-      horasTotalesLaborales: 640,
-      dolaresLaboralesDirectos: 15000,
-      dolaresTotalesLaborales: 22000,
-      costoLaboralDirecto: 12000,
-      ingresoTotal: 34000
+      ingresoLaboralDirecto: 0,
+      ingresoLaboralIndirecto: 0, 
+      numeroTotalEmpleados: 0,
+      ingresoLaboral: 0,
+      cantidadEmpleadosFacturables: 0,
+      horasLaboralesDirectas: 0,
+      horasTotalesLaborales: 0,
+      dolaresLaboralesDirectos: 0,
+      dolaresTotalesLaborales: 0,
+      costoLaboralDirecto: 0,
+      ingresoTotal: 0
     }
-  };
+  });
   
   // Estado para las métricas actuales
   const [metricas, setMetricas] = useState(metricasPorArea['todas']);
   
+  // Estado para manejo de carga y errores
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  
+  // Cargar datos de métricas desde la API
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        // Llamada a la API para obtener métricas
+        const response = await ApiService.hours.getMetrics();
+        
+        if (response && response.areas) {
+          // Actualizar estado con los datos de la API
+          setMetricasPorArea(response.areas);
+          
+          // Establecer métricas actuales según el área seleccionada
+          if (response.areas[selectedArea]) {
+            setMetricas(response.areas[selectedArea]);
+          } else {
+            setMetricas(response.areas['todas']);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching metrics:', err);
+        setError('No se pudieron cargar los datos de métricas. Por favor, intenta de nuevo más tarde.');
+        
+        // Cargar datos de prueba para demostración en caso de error
+        loadTestData();
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchMetrics();
+  }, []);
+  
+  // Función para cargar datos de prueba en caso de error o para demostración
+  const loadTestData = () => {
+    const testData = {
+      'todas': {
+        ingresoLaboralDirecto: 85000,
+        ingresoLaboralIndirecto: 35000, 
+        numeroTotalEmpleados: 25,
+        ingresoLaboral: 120000,
+        cantidadEmpleadosFacturables: 18,
+        horasLaboralesDirectas: 2800,
+        horasTotalesLaborales: 4000,
+        dolaresLaboralesDirectos: 6000,
+        dolaresTotalesLaborales: 15000,
+        costoLaboralDirecto: 5000,
+        ingresoTotal: 18000
+      },
+      'sis': {
+        ingresoLaboralDirecto: 17000,
+        ingresoLaboralIndirecto: 5000, 
+        numeroTotalEmpleados: 4,
+        ingresoLaboral: 22000,
+        cantidadEmpleadosFacturables: 3,
+        horasLaboralesDirectas: 400,
+        horasTotalesLaborales: 640,
+        dolaresLaboralesDirectos: 15000,
+        dolaresTotalesLaborales: 22000,
+        costoLaboralDirecto: 12000,
+        ingresoTotal: 34000
+      }
+    };
+    
+    setMetricasPorArea(testData);
+    setMetricas(testData[selectedArea]);
+  };
+  
   // Actualizar métricas al cambiar de área
   useEffect(() => {
-    setMetricas({...metricasPorArea[selectedArea]});
-  }, [selectedArea]);
+    if (metricasPorArea[selectedArea]) {
+      setMetricas({...metricasPorArea[selectedArea]});
+    }
+  }, [selectedArea, metricasPorArea]);
 
   // Actualizar el valor de una métrica
   const updateMetrica = (campo, valor) => {
@@ -213,27 +239,76 @@ function MetricasLaborales() {
     });
     
     // También actualizar en el objeto de datos por área
-    metricasPorArea[selectedArea] = {
-      ...metricasPorArea[selectedArea],
-      [campo]: nuevoValor
-    };
+    setMetricasPorArea({
+      ...metricasPorArea,
+      [selectedArea]: {
+        ...metricasPorArea[selectedArea],
+        [campo]: nuevoValor
+      }
+    });
   };
   
   // Función para reiniciar los valores
   const resetearValores = () => {
-    // Podríamos tener valores predeterminados para reiniciar
-    // Por ahora, simplemente recargamos los valores actuales del área
-    setMetricas({...metricasPorArea[selectedArea]});
+    // En caso de integración con API, podríamos recargar los datos originales
+    // Por ahora, simplemente recargamos los valores actuales del área desde loadTestData
+    loadTestData();
+    setSaveSuccess(false);
   };
   
-  // Función para guardar cambios (simulada)
-  const guardarCambios = () => {
-    // En una aplicación real, aquí enviaríamos los datos al servidor
-    alert('Cambios guardados correctamente');
+  // Función para guardar cambios (integrada con API)
+  const guardarCambios = async () => {
+    setLoading(true);
+    setSaveSuccess(false);
+    setError(null);
+    
+    try {
+      // Preparar datos para enviar a la API
+      const datosParaEnviar = {
+        area: selectedArea,
+        metricas: metricas
+      };
+      
+      // Llamada a la API para actualizar métricas
+      await ApiService.hours.updateMetrics(datosParaEnviar);
+      
+      // Mostrar mensaje de éxito
+      setSaveSuccess(true);
+      
+      // Ocultar mensaje de éxito después de 3 segundos
+      setTimeout(() => {
+        setSaveSuccess(false);
+      }, 3000);
+    } catch (err) {
+      console.error('Error saving metrics:', err);
+      setError('No se pudieron guardar los cambios. Por favor, intenta de nuevo.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="metricas-container">
+      {loading && (
+        <div className="loading-overlay">
+          <div className="spinner"></div>
+          <p>Procesando...</p>
+        </div>
+      )}
+      
+      {error && (
+        <div className="error-message">
+          <p>{error}</p>
+          <button onClick={() => setError(null)}>Cerrar</button>
+        </div>
+      )}
+      
+      {saveSuccess && (
+        <div className="success-message">
+          <p>Cambios guardados correctamente</p>
+        </div>
+      )}
+      
       {/* Selector de área */}
       <div className="area-selector">
         <label htmlFor="area-select">Filtrar por área:</label>
@@ -241,6 +316,7 @@ function MetricasLaborales() {
           id="area-select"
           value={selectedArea}
           onChange={(e) => setSelectedArea(e.target.value)}
+          disabled={loading}
         >
           {areas.map(area => (
             <option key={area.id} value={area.id}>{area.nombre}</option>
@@ -258,6 +334,7 @@ function MetricasLaborales() {
               type="number"
               value={metricas.ingresoLaboralDirecto}
               onChange={(e) => updateMetrica('ingresoLaboralDirecto', e.target.value)}
+              disabled={loading}
             />
           </div>
           
@@ -267,6 +344,7 @@ function MetricasLaborales() {
               type="number"
               value={metricas.ingresoLaboralIndirecto}
               onChange={(e) => updateMetrica('ingresoLaboralIndirecto', e.target.value)}
+              disabled={loading}
             />
           </div>
           
@@ -276,6 +354,7 @@ function MetricasLaborales() {
               type="number"
               value={metricas.ingresoLaboral}
               onChange={(e) => updateMetrica('ingresoLaboral', e.target.value)}
+              disabled={loading}
             />
           </div>
           
@@ -285,6 +364,7 @@ function MetricasLaborales() {
               type="number"
               value={metricas.ingresoTotal}
               onChange={(e) => updateMetrica('ingresoTotal', e.target.value)}
+              disabled={loading}
             />
           </div>
         </div>
@@ -298,6 +378,7 @@ function MetricasLaborales() {
               type="number"
               value={metricas.numeroTotalEmpleados}
               onChange={(e) => updateMetrica('numeroTotalEmpleados', e.target.value)}
+              disabled={loading}
             />
           </div>
           
@@ -307,6 +388,7 @@ function MetricasLaborales() {
               type="number"
               value={metricas.cantidadEmpleadosFacturables}
               onChange={(e) => updateMetrica('cantidadEmpleadosFacturables', e.target.value)}
+              disabled={loading}
             />
           </div>
         </div>
@@ -320,6 +402,7 @@ function MetricasLaborales() {
               type="number"
               value={metricas.horasLaboralesDirectas}
               onChange={(e) => updateMetrica('horasLaboralesDirectas', e.target.value)}
+              disabled={loading}
             />
           </div>
           
@@ -329,6 +412,7 @@ function MetricasLaborales() {
               type="number"
               value={metricas.horasTotalesLaborales}
               onChange={(e) => updateMetrica('horasTotalesLaborales', e.target.value)}
+              disabled={loading}
             />
           </div>
         </div>
@@ -342,6 +426,7 @@ function MetricasLaborales() {
               type="number"
               value={metricas.dolaresLaboralesDirectos}
               onChange={(e) => updateMetrica('dolaresLaboralesDirectos', e.target.value)}
+              disabled={loading}
             />
           </div>
           
@@ -351,6 +436,7 @@ function MetricasLaborales() {
               type="number"
               value={metricas.dolaresTotalesLaborales}
               onChange={(e) => updateMetrica('dolaresTotalesLaborales', e.target.value)}
+              disabled={loading}
             />
           </div>
           
@@ -360,16 +446,25 @@ function MetricasLaborales() {
               type="number"
               value={metricas.costoLaboralDirecto}
               onChange={(e) => updateMetrica('costoLaboralDirecto', e.target.value)}
+              disabled={loading}
             />
           </div>
         </div>
       </div>
       
       <div className="buttons-container">
-        <button className="save-button" onClick={guardarCambios}>
-          Guardar Cambios
+        <button 
+          className="save-button" 
+          onClick={guardarCambios}
+          disabled={loading}
+        >
+          {loading ? 'Guardando...' : 'Guardar Cambios'}
         </button>
-        <button className="reset-button" onClick={resetearValores}>
+        <button 
+          className="reset-button" 
+          onClick={resetearValores}
+          disabled={loading}
+        >
           Reiniciar
         </button>
       </div>
@@ -448,7 +543,7 @@ function MetricasLaborales() {
       </div>
       
       {/* Tabla comparativa de áreas */}
-      {selectedArea === 'todas' && (
+      {selectedArea === 'todas' && Object.keys(metricasPorArea).length > 1 && (
         <div className="comparison-container">
           <h3>Comparativa por Áreas</h3>
           <div className="table-container">
@@ -465,7 +560,7 @@ function MetricasLaborales() {
                 </tr>
               </thead>
               <tbody>
-                {areas.filter(area => area.id !== 'todas').map(area => {
+                {areas.filter(area => area.id !== 'todas' && metricasPorArea[area.id]).map(area => {
                   const areaData = metricasPorArea[area.id];
                   const margen = areaData.ingresoLaboral > 0 
                     ? ((areaData.ingresoLaboral - areaData.dolaresTotalesLaborales) / areaData.ingresoLaboral * 100).toFixed(1)
@@ -476,7 +571,7 @@ function MetricasLaborales() {
                       <td>{area.nombre}</td>
                       <td>${areaData.ingresoTotal.toLocaleString()}</td>
                       <td>{areaData.numeroTotalEmpleados}</td>
-                      <td>{areaData.cantidadEmpleadosFacturables} ({((areaData.cantidadEmpleadosFacturables / areaData.numeroTotalEmpleados) * 100).toFixed(0)}%)</td>
+                      <td>{areaData.cantidadEmpleadosFacturables} ({areaData.numeroTotalEmpleados > 0 ? ((areaData.cantidadEmpleadosFacturables / areaData.numeroTotalEmpleados) * 100).toFixed(0) : 0}%)</td>
                       <td>{areaData.horasLaboralesDirectas.toLocaleString()}</td>
                       <td>${areaData.dolaresTotalesLaborales.toLocaleString()}</td>
                       <td>
@@ -496,6 +591,70 @@ function MetricasLaborales() {
       <style jsx>{`
         .metricas-container {
           margin-top: 20px;
+          position: relative;
+        }
+        
+        .loading-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(255, 255, 255, 0.8);
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+        }
+        
+        .spinner {
+          width: 40px;
+          height: 40px;
+          border: 3px solid rgba(67, 97, 238, 0.2);
+          border-radius: 50%;
+          border-top-color: #4361ee;
+          animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+          background-color: #ffe0e0;
+          padding: 15px;
+          border-radius: 8px;
+          margin-bottom: 20px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        
+        .error-message p {
+          color: #e53e3e;
+          margin: 0;
+        }
+        
+        .error-message button {
+          background-color: #e53e3e;
+          color: white;
+          border: none;
+          padding: 5px 10px;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+        
+        .success-message {
+          background-color: #d4edda;
+          padding: 15px;
+          border-radius: 8px;
+          margin-bottom: 20px;
+        }
+        
+        .success-message p {
+          color: #155724;
+          margin: 0;
         }
         
         .area-selector {
@@ -587,6 +746,11 @@ function MetricasLaborales() {
           background-color: #3651d4;
         }
         
+        .save-button:disabled {
+          background-color: #a0aec0;
+          cursor: not-allowed;
+        }
+        
         .reset-button {
           background-color: #f1f5f9;
           color: #475569;
@@ -600,6 +764,12 @@ function MetricasLaborales() {
         
         .reset-button:hover {
           background-color: #e2e8f0;
+        }
+        
+        .reset-button:disabled {
+          background-color: #f1f5f9;
+          color: #a0aec0;
+          cursor: not-allowed;
         }
         
         .summary-container {
@@ -735,4 +905,43 @@ function MetricasLaborales() {
       `}</style>
     </div>
   );
-}
+} 75000,
+        dolaresTotalesLaborales: 110000,
+        costoLaboralDirecto: 65000,
+        ingresoTotal: 150000
+      },
+      'ing': {
+        ingresoLaboralDirecto: 45000,
+        ingresoLaboralIndirecto: 15000, 
+        numeroTotalEmpleados: 12,
+        ingresoLaboral: 60000,
+        cantidadEmpleadosFacturables: 10,
+        horasLaboralesDirectas: 1600,
+        horasTotalesLaborales: 1920,
+        dolaresLaboralesDirectos: 42000,
+        dolaresTotalesLaborales: 55000,
+        costoLaboralDirecto: 38000,
+        ingresoTotal: 72000
+      },
+      'dis': {
+        ingresoLaboralDirecto: 15000,
+        ingresoLaboralIndirecto: 8000, 
+        numeroTotalEmpleados: 5,
+        ingresoLaboral: 23000,
+        cantidadEmpleadosFacturables: 3,
+        horasLaboralesDirectas: 480,
+        horasTotalesLaborales: 800,
+        dolaresLaboralesDirectos: 12000,
+        dolaresTotalesLaborales: 18000,
+        costoLaboralDirecto: 10000,
+        ingresoTotal: 26000
+      },
+      'adm': {
+        ingresoLaboralDirecto: 8000,
+        ingresoLaboralIndirecto: 7000, 
+        numeroTotalEmpleados: 4,
+        ingresoLaboral: 15000,
+        cantidadEmpleadosFacturables: 2,
+        horasLaboralesDirectas: 320,
+        horasTotalesLaborales: 640,
+        dolaresLaboralesDirectos:
