@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
       } catch (error) {
         console.error('Error checking authentication status:', error);
         // If there's an error, log out the user
-        ApiService.logout();
+       // ApiService.logout();
       } finally {
         setLoading(false);
       }

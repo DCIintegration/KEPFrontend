@@ -1,4 +1,3 @@
-// Updated dashboard.js with API integration
 import styles from '../styles/dashboard.module.css';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
@@ -7,9 +6,8 @@ import Layout from '../components/Layout';
 import Head from 'next/head';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import ApiService from '../api';
 
-// Dynamic imports for charts
+// Importación dinámica para evitar errores de SSR con Recharts
 const PieChart = dynamic(() => import('recharts').then(mod => mod.PieChart), { ssr: false });
 const Pie = dynamic(() => import('recharts').then(mod => mod.Pie), { ssr: false });
 const Cell = dynamic(() => import('recharts').then(mod => mod.Cell), { ssr: false });
@@ -29,25 +27,23 @@ export default function Dashboard() {
   const router = useRouter();
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [activeSection, setActiveSection] = useState('kpis');
-  const [activeModule, setActiveModule] = useState('horas');
+  const [activeModule, setActiveModule] = useState('horas'); // 'horas', 'salarios', o 'metricas'
   const [animating, setAnimating] = useState(false);
   
-  // Data states
+  // Datos de métricas
   const [metricas, setMetricas] = useState({
-    ingresoLaboralDirecto: 0,
-    ingresoLaboralIndirecto: 0, 
-    numeroTotalEmpleados: 0,
-    ingresoLaboral: 0,
-    cantidadEmpleadosFacturables: 0,
-    horasLaboralesDirectas: 0,
-    horasTotalesLaborales: 0,
-    dolaresLaboralesDirectos: 0,
-    dolaresTotalesLaborales: 0,
-    costoLaboralDirecto: 0,
-    ingresoTotal: 0
+    ingresoLaboralDirecto: 85000,
+    ingresoLaboralIndirecto: 35000, 
+    numeroTotalEmpleados: 25,
+    ingresoLaboral: 120000,
+    cantidadEmpleadosFacturables: 18,
+    horasLaboralesDirectas: 2800,
+    horasTotalesLaborales: 4000,
+    dolaresLaboralesDirectos: 75000,
+    dolaresTotalesLaborales: 110000,
+    costoLaboralDirecto: 65000,
+    ingresoTotal: 150000
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   
   // Authentication check
   useEffect(() => {
@@ -64,32 +60,6 @@ export default function Dashboard() {
     }
   }, [user, router, isAuthChecking]);
 
-  // Fetch dashboard data from API
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      if (!user) return;
-      
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const dashboardData = await ApiService.dashboard.getMainDashboard();
-        
-        // Update the metrics with data from API
-        if (dashboardData && dashboardData.metricas) {
-          setMetricas(dashboardData.metricas);
-        }
-      } catch (err) {
-        console.error('Error fetching dashboard data:', err);
-        setError('No se pudieron cargar los datos del dashboard');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchDashboardData();
-  }, [user]);
-
   const changeSection = (section) => {
     if (section === activeSection || animating) return;
     
@@ -102,33 +72,36 @@ export default function Dashboard() {
     }, 500);
   };
 
+  // Función para cambiar módulo
   const changeModule = (module) => {
     setActiveModule(module);
   };
   
-  // Format numbers with commas for thousands
+  // Formatear números con comas para miles
   const formatoNumero = (numero) => {
     return numero.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
   
-  // Generate data for charts based on metrics
+  // Datos para el gráfico de empleados
   const datosEmpleados = [
     { name: 'Facturables', valor: metricas.cantidadEmpleadosFacturables },
     { name: 'No Facturables', valor: metricas.numeroTotalEmpleados - metricas.cantidadEmpleadosFacturables }
   ];
   
+  // Datos para el gráfico de horas
   const datosHoras = [
     { name: 'Horas Directas', valor: metricas.horasLaboralesDirectas },
     { name: 'Horas Indirectas', valor: metricas.horasTotalesLaborales - metricas.horasLaboralesDirectas }
   ];
   
+  // Datos para el gráfico de ingresos
   const datosIngresos = [
     { name: 'Laboral Directo', valor: metricas.ingresoLaboralDirecto },
     { name: 'Laboral Indirecto', valor: metricas.ingresoLaboralIndirecto },
     { name: 'Otros', valor: metricas.ingresoTotal - metricas.ingresoLaboral }
   ];
   
-  // Trend data - ideally this would come from the API too
+  // Datos para el gráfico de tendencias
   const datosTendencia = [
     { mes: 'Ene', ingreso: 125000, horas: 3600 },
     { mes: 'Feb', ingreso: 130000, horas: 3700 },
@@ -138,10 +111,9 @@ export default function Dashboard() {
     { mes: 'Jun', ingreso: 150000, horas: 4000 }
   ];
   
-  // Colors for charts
+  // Colores para los gráficos
   const colores = ['#4361ee', '#3f37c9', '#0096c7', '#0077b6', '#48cae4'];
   
-  // Generate random data for tables
   const generateRandomData = (rows, columns) => {
     const data = [];
     const headers = [];
@@ -201,7 +173,7 @@ export default function Dashboard() {
     return { headers, data };
   };
 
-  // Render table based on active section
+  // Renderizar tabla según la sección activa
   const renderTable = () => {
     const { headers, data } = generateRandomData(8, 5);
     
@@ -229,272 +201,226 @@ export default function Dashboard() {
     );
   };
 
-  // Render KPI Portal module
+  // Renderizar el módulo del Portal de KPIs
   const renderKPIPortal = () => {
     return (
       <div className="kpi-dashboard">
         <h2 className="dashboard-title">Dashboard de Métricas Laborales</h2>
         
-        {loading && (
-          <div className="loading-indicator">
-            <div className="spinner"></div>
-            <p>Cargando datos...</p>
-          </div>
-        )}
-        
-        {error && (
-          <div className="error-message">
-            <p>{error}</p>
-            <button onClick={() => window.location.reload()}>Reintentar</button>
-          </div>
-        )}
-        
-        {!loading && !error && (
-          <>
-            <div className="stats-container">
-              <div className="stats-row">
-                {/* Empleados */}
-                <div className="stats-card">
-                  <h3 className="card-title">Empleados</h3>
-                  <div className="stat-details">
-                    <div className="stat-summary">
-                      <div className="stat-item">
-                        <span className="stat-label">Total:</span>
-                        <span className="stat-value">{formatoNumero(metricas.numeroTotalEmpleados)}</span>
-                      </div>
-                      <div className="stat-item">
-                        <span className="stat-label">Facturables:</span>
-                        <span className="stat-value">{formatoNumero(metricas.cantidadEmpleadosFacturables)}</span>
-                      </div>
-                      <div className="stat-item">
-                        <span className="stat-label">% Facturables:</span>
-                        <span className="stat-value">
-                          {metricas.numeroTotalEmpleados > 0 
-                            ? ((metricas.cantidadEmpleadosFacturables / metricas.numeroTotalEmpleados) * 100).toFixed(1) 
-                            : 0}%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="chart-container">
-                      <ResponsiveContainer width="100%" height={180}>
-                        <PieChart>
-                          <Pie
-                            data={datosEmpleados}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            outerRadius={70}
-                            fill="#8884d8"
-                            dataKey="valor"
-                            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                          >
-                            {datosEmpleados.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={colores[index % colores.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip formatter={(value) => [`${value}`, 'Cantidad']} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
+        <div className="stats-container">
+          <div className="stats-row">
+            {/* Empleados */}
+            <div className="stats-card">
+              <h3 className="card-title">Empleados</h3>
+              <div className="stat-details">
+                <div className="stat-summary">
+                  <div className="stat-item">
+                    <span className="stat-label">Total:</span>
+                    <span className="stat-value">{formatoNumero(metricas.numeroTotalEmpleados)}</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">Facturables:</span>
+                    <span className="stat-value">{formatoNumero(metricas.cantidadEmpleadosFacturables)}</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">% Facturables:</span>
+                    <span className="stat-value">{((metricas.cantidadEmpleadosFacturables / metricas.numeroTotalEmpleados) * 100).toFixed(1)}%</span>
                   </div>
                 </div>
-                
-                {/* Horas */}
-                <div className="stats-card">
-                  <h3 className="card-title">Horas</h3>
-                  <div className="stat-details">
-                    <div className="stat-summary">
-                      <div className="stat-item">
-                        <span className="stat-label">Horas Directas:</span>
-                        <span className="stat-value">{formatoNumero(metricas.horasLaboralesDirectas)}</span>
-                      </div>
-                      <div className="stat-item">
-                        <span className="stat-label">Horas Totales:</span>
-                        <span className="stat-value">{formatoNumero(metricas.horasTotalesLaborales)}</span>
-                      </div>
-                      <div className="stat-item">
-                        <span className="stat-label">% Utilización:</span>
-                        <span className="stat-value">
-                          {metricas.horasTotalesLaborales > 0 
-                            ? ((metricas.horasLaboralesDirectas / metricas.horasTotalesLaborales) * 100).toFixed(1) 
-                            : 0}%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="chart-container">
-                      <ResponsiveContainer width="100%" height={180}>
-                        <PieChart>
-                          <Pie
-                            data={datosHoras}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            outerRadius={70}
-                            fill="#8884d8"
-                            dataKey="valor"
-                            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                          >
-                            {datosHoras.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={colores[index % colores.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip formatter={(value) => [`${formatoNumero(value)} horas`, 'Cantidad']} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Ingresos */}
-                <div className="stats-card">
-                  <h3 className="card-title">Ingresos</h3>
-                  <div className="stat-details">
-                    <div className="stat-summary">
-                      <div className="stat-item">
-                        <span className="stat-label">Ingreso Laboral:</span>
-                        <span className="stat-value">${formatoNumero(metricas.ingresoLaboral)}</span>
-                      </div>
-                      <div className="stat-item">
-                        <span className="stat-label">Ingreso Total:</span>
-                        <span className="stat-value">${formatoNumero(metricas.ingresoTotal)}</span>
-                      </div>
-                      <div className="stat-item">
-                        <span className="stat-label">% del Total:</span>
-                        <span className="stat-value">
-                          {metricas.ingresoTotal > 0 
-                            ? ((metricas.ingresoLaboral / metricas.ingresoTotal) * 100).toFixed(1) 
-                            : 0}%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="chart-container">
-                      <ResponsiveContainer width="100%" height={180}>
-                        <BarChart data={datosIngresos}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" />
-                          <YAxis />
-                          <Tooltip formatter={(value) => [`$${formatoNumero(value)}`, 'Ingreso']} />
-                          <Bar dataKey="valor" fill="#8884d8">
-                            {datosIngresos.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={colores[index % colores.length]} />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
+                <div className="chart-container">
+                  <ResponsiveContainer width="100%" height={180}>
+                    <PieChart>
+                      <Pie
+                        data={datosEmpleados}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={70}
+                        fill="#8884d8"
+                        dataKey="valor"
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {datosEmpleados.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={colores[index % colores.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => [`${value}`, 'Cantidad']} />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
             </div>
             
-            {/* Tendencias y Resumen Financiero */}
-            <div className="stats-container">
-              <div className="stats-row">
-                {/* Tendencias */}
-                <div className="stats-card wide">
-                  <h3 className="card-title">Tendencias (6 meses)</h3>
-                  <div className="chart-container">
-                    <ResponsiveContainer width="100%" height={250}>
-                      <LineChart data={datosTendencia}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="mes" />
-                        <YAxis yAxisId="left" />
-                        <YAxis yAxisId="right" orientation="right" />
-                        <Tooltip formatter={(value, name) => [
-                          name === 'ingreso' ? `$${formatoNumero(value)}` : `${formatoNumero(value)} h`,
-                          name === 'ingreso' ? 'Ingreso' : 'Horas'
-                        ]} />
-                        <Legend />
-                        <Line 
-                          yAxisId="left" 
-                          type="monotone" 
-                          dataKey="ingreso" 
-                          stroke={colores[0]} 
-                          activeDot={{ r: 8 }}
-                          name="Ingreso" 
-                        />
-                        <Line 
-                          yAxisId="right" 
-                          type="monotone" 
-                          dataKey="horas" 
-                          stroke={colores[1]}
-                          name="Horas" 
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
+            {/* Horas */}
+            <div className="stats-card">
+              <h3 className="card-title">Horas</h3>
+              <div className="stat-details">
+                <div className="stat-summary">
+                  <div className="stat-item">
+                    <span className="stat-label">Horas Directas:</span>
+                    <span className="stat-value">{formatoNumero(metricas.horasLaboralesDirectas)}</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">Horas Totales:</span>
+                    <span className="stat-value">{formatoNumero(metricas.horasTotalesLaborales)}</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">% Utilización:</span>
+                    <span className="stat-value">{((metricas.horasLaboralesDirectas / metricas.horasTotalesLaborales) * 100).toFixed(1)}%</span>
                   </div>
                 </div>
-                
-                {/* Resumen Financiero */}
-                <div className="stats-card medium">
-                  <h3 className="card-title">Resumen Financiero</h3>
-                  <div className="financial-summary">
-                    <div className="financial-row">
-                      <span className="financial-label">Ingreso Laboral Directo:</span>
-                      <span className="financial-value">${formatoNumero(metricas.ingresoLaboralDirecto)}</span>
-                      <span className="financial-percent">
-                        {metricas.ingresoTotal > 0 
-                          ? (metricas.ingresoLaboralDirecto / metricas.ingresoTotal * 100).toFixed(1) 
-                          : 0}%
-                      </span>
-                    </div>
-                    <div className="financial-row">
-                      <span className="financial-label">Ingreso Laboral Indirecto:</span>
-                      <span className="financial-value">${formatoNumero(metricas.ingresoLaboralIndirecto)}</span>
-                      <span className="financial-percent">
-                        {metricas.ingresoTotal > 0 
-                          ? (metricas.ingresoLaboralIndirecto / metricas.ingresoTotal * 100).toFixed(1) 
-                          : 0}%
-                      </span>
-                    </div>
-                    <div className="financial-row">
-                      <span className="financial-label">Costo Laboral Directo:</span>
-                      <span className="financial-value">${formatoNumero(metricas.costoLaboralDirecto)}</span>
-                      <span className="financial-percent">
-                        {metricas.dolaresTotalesLaborales > 0 
-                          ? (metricas.costoLaboralDirecto / metricas.dolaresTotalesLaborales * 100).toFixed(1) 
-                          : 0}%
-                      </span>
-                    </div>
-                    <div className="financial-row">
-                      <span className="financial-label">Dólares Laborales Totales:</span>
-                      <span className="financial-value">${formatoNumero(metricas.dolaresTotalesLaborales)}</span>
-                      <span className="financial-percent">100.0%</span>
-                    </div>
-                    <div className="financial-row total">
-                      <span className="financial-label">Margen Bruto:</span>
-                      <span className="financial-value">${formatoNumero(metricas.ingresoLaboral - metricas.dolaresTotalesLaborales)}</span>
-                      <span className="financial-percent">
-                        {metricas.ingresoLaboral > 0 
-                          ? ((metricas.ingresoLaboral - metricas.dolaresTotalesLaborales) / metricas.ingresoLaboral * 100).toFixed(1) 
-                          : 0}%
-                      </span>
-                    </div>
-                  </div>
+                <div className="chart-container">
+                  <ResponsiveContainer width="100%" height={180}>
+                    <PieChart>
+                      <Pie
+                        data={datosHoras}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={70}
+                        fill="#8884d8"
+                        dataKey="valor"
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {datosHoras.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={colores[index % colores.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => [`${formatoNumero(value)} horas`, 'Cantidad']} />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
             </div>
             
-            {/* Módulos */}
-            <div className="modules-container">
-              <h3 className="modules-title">Gestión de Datos</h3>
-              <div className="modules-grid">
-                <Link href="/horas" className="module-card">
-                    <div className="module-icon">⏱️</div>
-                    <div className="module-name">Control de Horas</div>
-                </Link>
-                <Link href="/salarios" className="module-card">
-                    <div className="module-icon">💰</div>
-                    <div className="module-name">Control de Salarios</div>
-                </Link>
-                <Link href="/metricas" className="module-card">
-                    <div className="module-icon">📊</div>
-                    <div className="module-name">Métricas Laborales</div>
-                </Link>
+            {/* Ingresos */}
+            <div className="stats-card">
+              <h3 className="card-title">Ingresos</h3>
+              <div className="stat-details">
+                <div className="stat-summary">
+                  <div className="stat-item">
+                    <span className="stat-label">Ingreso Laboral:</span>
+                    <span className="stat-value">${formatoNumero(metricas.ingresoLaboral)}</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">Ingreso Total:</span>
+                    <span className="stat-value">${formatoNumero(metricas.ingresoTotal)}</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">% del Total:</span>
+                    <span className="stat-value">{((metricas.ingresoLaboral / metricas.ingresoTotal) * 100).toFixed(1)}%</span>
+                  </div>
+                </div>
+                <div className="chart-container">
+                  <ResponsiveContainer width="100%" height={180}>
+                    <BarChart data={datosIngresos}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip formatter={(value) => [`$${formatoNumero(value)}`, 'Ingreso']} />
+                      <Bar dataKey="valor" fill="#8884d8">
+                        {datosIngresos.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={colores[index % colores.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </div>
-          </>
-        )}
+          </div>
+        </div>
+        
+        {/* Tendencias y Resumen Financiero */}
+        <div className="stats-container">
+          <div className="stats-row">
+            {/* Tendencias */}
+            <div className="stats-card wide">
+              <h3 className="card-title">Tendencias (6 meses)</h3>
+              <div className="chart-container">
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={datosTendencia}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="mes" />
+                    <YAxis yAxisId="left" />
+                    <YAxis yAxisId="right" orientation="right" />
+                    <Tooltip formatter={(value, name) => [
+                      name === 'ingreso' ? `$${formatoNumero(value)}` : `${formatoNumero(value)} h`,
+                      name === 'ingreso' ? 'Ingreso' : 'Horas'
+                    ]} />
+                    <Legend />
+                    <Line 
+                      yAxisId="left" 
+                      type="monotone" 
+                      dataKey="ingreso" 
+                      stroke={colores[0]} 
+                      activeDot={{ r: 8 }}
+                      name="Ingreso" 
+                    />
+                    <Line 
+                      yAxisId="right" 
+                      type="monotone" 
+                      dataKey="horas" 
+                      stroke={colores[1]}
+                      name="Horas" 
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            
+            {/* Resumen Financiero */}
+            <div className="stats-card medium">
+              <h3 className="card-title">Resumen Financiero</h3>
+              <div className="financial-summary">
+                <div className="financial-row">
+                  <span className="financial-label">Ingreso Laboral Directo:</span>
+                  <span className="financial-value">${formatoNumero(metricas.ingresoLaboralDirecto)}</span>
+                  <span className="financial-percent">{(metricas.ingresoLaboralDirecto / metricas.ingresoTotal * 100).toFixed(1)}%</span>
+                </div>
+                <div className="financial-row">
+                  <span className="financial-label">Ingreso Laboral Indirecto:</span>
+                  <span className="financial-value">${formatoNumero(metricas.ingresoLaboralIndirecto)}</span>
+                  <span className="financial-percent">{(metricas.ingresoLaboralIndirecto / metricas.ingresoTotal * 100).toFixed(1)}%</span>
+                </div>
+                <div className="financial-row">
+                  <span className="financial-label">Costo Laboral Directo:</span>
+                  <span className="financial-value">${formatoNumero(metricas.costoLaboralDirecto)}</span>
+                  <span className="financial-percent">{(metricas.costoLaboralDirecto / metricas.dolaresTotalesLaborales * 100).toFixed(1)}%</span>
+                </div>
+                <div className="financial-row">
+                  <span className="financial-label">Dólares Laborales Totales:</span>
+                  <span className="financial-value">${formatoNumero(metricas.dolaresTotalesLaborales)}</span>
+                  <span className="financial-percent">100.0%</span>
+                </div>
+                <div className="financial-row total">
+                  <span className="financial-label">Margen Bruto:</span>
+                  <span className="financial-value">${formatoNumero(metricas.ingresoLaboral - metricas.dolaresTotalesLaborales)}</span>
+                  <span className="financial-percent">{((metricas.ingresoLaboral - metricas.dolaresTotalesLaborales) / metricas.ingresoLaboral * 100).toFixed(1)}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Módulos */}
+        <div className="modules-container">
+          <h3 className="modules-title">Gestión de Datos</h3>
+          <div className="modules-grid">
+            <Link href="/horas" className="module-card">
+                <div className="module-icon">⏱️</div>
+                <div className="module-name">Control de Horas</div>
+            </Link>
+            <Link href="/salarios" className="module-card">
+                <div className="module-icon">💰</div>
+                <div className="module-name">Control de Salarios</div>
+            </Link>
+            <Link href="/metricas" className="module-card">
+                <div className="module-icon">📊</div>
+                <div className="module-name">Métricas Laborales</div>
+            </Link>
+          </div>
+        </div>
       </div>
     );
   };
@@ -650,51 +576,6 @@ export default function Dashboard() {
       </div>
 
       <style jsx>{`
-        .loading-indicator {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 40px;
-        }
-        
-        .spinner {
-          width: 40px;
-          height: 40px;
-          border: 3px solid rgba(67, 97, 238, 0.2);
-          border-radius: 50%;
-          border-top-color: #4361ee;
-          animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        
-        .error-message {
-          background-color: #ffe0e0;
-          padding: 20px;
-          border-radius: 8px;
-          margin-bottom: 20px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        
-        .error-message p {
-          color: #e53e3e;
-          margin: 0;
-        }
-        
-        .error-message button {
-          background-color: #e53e3e;
-          color: white;
-          border: none;
-          padding: 8px 16px;
-          border-radius: 4px;
-          cursor: pointer;
-        }
-      
         .tabs-container {
           display: flex;
           gap: 10px;
