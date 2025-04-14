@@ -470,7 +470,7 @@ export default function ProcesarArchivosPage() {
             margin-bottom: 4px;
           }
 
-          .file-type, .file-size, .file-date {
+          .fim le-type, .file-size, .file-date {
             width: auto;
             margin-right: 16px;
           }

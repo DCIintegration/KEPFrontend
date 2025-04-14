@@ -1,3 +1,4 @@
+// pages/login.js
 import styles from '../styles/login.module.css';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
@@ -5,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import Head from 'next/head';
 
 export default function Login() {
-  const { login, user } = useAuth();
+  const { login, user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -13,7 +14,6 @@ export default function Login() {
   const [error, setError] = useState(null);
   const [isAnimated, setIsAnimated] = useState(false);
   
-  //const api_url = "";
   // Redirect to dashboard if already authenticated
   useEffect(() => {
     if (user) {
@@ -42,13 +42,17 @@ export default function Login() {
       setLoading(true);
       setError(null);
       
-      // Call login function from context
+      // Call login function from context which now uses the API service
       await login(email, password);
       
-      // Redirect to dashboard on success
-      router.push('/dashboard');
+      // No need to redirect here as the useEffect will handle it once user state changes
     } catch (err) {
-      setError('Credenciales inválidas. Por favor intenta de nuevo.');
+      // More specific error message based on the API response if available
+      if (err.message) {
+        setError(err.message);
+      } else {
+        setError('Credenciales inválidas. Por favor intenta de nuevo.');
+      }
       console.error('Login error:', err);
     } finally {
       setLoading(false);
@@ -85,7 +89,7 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Ingresa tu correo"
-                  disabled={loading}
+                  disabled={loading || authLoading}
                   className={styles.formInput}
                 />
               </div>
@@ -98,7 +102,7 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Ingresa tu contraseña"
-                  disabled={loading}
+                  disabled={loading || authLoading}
                   className={styles.formInput}
                 />
               </div>
@@ -110,9 +114,9 @@ export default function Login() {
               <button 
                 type="submit" 
                 className={styles.loginButton} 
-                disabled={loading}
+                disabled={loading || authLoading}
               >
-                {loading ? (
+                {loading || authLoading ? (
                   <>
                     <span className={styles.spinner}></span>
                     <span>Cargando...</span>
