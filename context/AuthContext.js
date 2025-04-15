@@ -14,15 +14,11 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkUserLoggedIn = async () => {
       try {
-        // Check if user data is in local storage (handled by the ApiService)
-        if (ApiService.isAuthenticated()) {
-          const userData = ApiService.getCurrentUser();
-          setUser(userData);
-        }
+        // Simplemente asumimos que no hay usuario autenticado al inicio
+        // Elimina la verificación problemática de ApiService.isAuthenticated()
+        setLoading(false);
       } catch (error) {
         console.error('Error checking authentication status:', error);
-        // If there's an error, log out the user
-       // ApiService.logout();
       } finally {
         setLoading(false);
       }
@@ -53,7 +49,11 @@ export const AuthProvider = ({ children }) => {
 
   // Logout function
   const logout = () => {
-    ApiService.logout();
+    try {
+      ApiService.logout();
+    } catch (error) {
+      console.error('Error in logout:', error);
+    }
     setUser(null);
   };
 

@@ -65,8 +65,13 @@ const Layout = ({ children, title = 'Portal KPIs', hideHeader = false }) => {
         <title>{title}</title>
         <meta charSet="utf-8" />
         <meta name="viewport" content="initial-scale=1.0, width=device-width" />
+        <meta name="description" content="Portal de KPIs y métricas" />
+        <link rel="icon" href="/DCIlogo.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/DCIlogo.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/DCIlogo.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/DCIlogo.png" />
       </Head>
-      
+
       {/* Mostramos el Header solo si hideHeader es false */}
       {!hideHeader && <Header />}
       
