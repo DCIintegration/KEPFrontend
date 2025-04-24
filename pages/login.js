@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../context/AuthContext';
 import Head from 'next/head';
+import Link from 'next/link';
 
 export default function Login() {
   const { login, user, loading: authLoading } = useAuth();
@@ -42,18 +43,19 @@ export default function Login() {
       setLoading(true);
       setError(null);
       
-      // Call login function from context which now uses the API service
-      await login(email, password);
+      // Call login function from context which now returns an object
+      const result = await login(email, password);
       
-      // No need to redirect here as the useEffect will handle it once user state changes
-    } catch (err) {
-      // More specific error message based on the API response if available
-      if (err.message) {
-        setError(err.message);
-      } else {
-        setError('Credenciales inválidas. Por favor intenta de nuevo.');
+      // Check if login was successful
+      if (!result.success) {
+        setError(result.error || 'Credenciales inválidas. Por favor intenta de nuevo.');
       }
-      console.error('Login error:', err);
+      // No need to redirect here as the useEffect will handle it
+      
+    } catch (err) {
+      // En caso de un error inesperado
+      console.error('Error inesperado en login:', err);
+      setError('Ha ocurrido un error al intentar iniciar sesión. Por favor intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -124,9 +126,31 @@ export default function Login() {
                 ) : 'Iniciar Sesión'}
               </button>
             </form>
+            
+            <div className={styles.registerLink}>
+              ¿No tienes una cuenta? <Link href="/register">Regístrate aquí</Link>
+            </div>
           </div>
         </div>
       </div>
+      
+      <style jsx>{`
+        .registerLink {
+          text-align: center;
+          margin-top: 20px;
+          font-size: 14px;
+          color: #666;
+        }
+        
+        .registerLink a {
+          color: #4361ee;
+          text-decoration: none;
+        }
+        
+        .registerLink a:hover {
+          text-decoration: underline;
+        }
+      `}</style>
     </>
   );
 }

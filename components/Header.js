@@ -44,7 +44,9 @@ export default function Header() {
       await logout();
       router.push('/login');
     } catch (error) {
-      console.error('Error logging out:', error);
+      console.error('Error al cerrar sesión:', error);
+      // Intentar redireccionar a login aunque haya error
+      router.push('/login');
     }
   };
   
@@ -76,7 +78,9 @@ export default function Header() {
               
               {dropdownOpen && (
                 <div className="dropdown-menu">
-                  <div className="dropdown-item">Perfil de Usuario</div>
+                  <Link href="/profile">
+                    <div className="dropdown-item">Perfil de Usuario</div>
+                  </Link>
                   <div className="dropdown-item">Preferencias</div>
                   <div className="dropdown-item">Notificaciones</div>
                   <div className="dropdown-item">Apariencia</div>

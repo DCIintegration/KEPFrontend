@@ -1,29 +1,15 @@
-// pages/metricas.js
+// pages/hours.js
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
 import Head from 'next/head';
+import api from '../api';
 
-export default function MetricasPage() {
+export default function HoursPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [isAuthChecking, setIsAuthChecking] = useState(true);
   
-  // Authentication check
-  useEffect(() => {
-    const checkAuth = setTimeout(() => {
-      setIsAuthChecking(false);
-    }, 100);
-    
-    return () => clearTimeout(checkAuth);
-  }, []);
-  
-  // Quitamos la redirección si no hay usuario autenticado para permitir
-  // que la página siga funcionando aunque haya un problema con la autenticación
-  
-  // Mostrar contenido de la página sin verificación estricta de autenticación
-  // para evitar el bloqueo por el error de isAuthenticated()
   return (
     <Layout title="Métricas Laborales | Panel de Control">
       <div className="page-container">
@@ -80,11 +66,14 @@ function MetricasLaborales() {
     { id: 'sis', nombre: 'Sistemas' }
   ];
   
-  // Estado para el área seleccionada
+  // Estados para gestión del componente
   const [selectedArea, setSelectedArea] = useState('todas');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
   
-  // Datos de métricas por área
-  const metricasPorArea = {
+  // Datos de métricas por defecto (se usarán hasta que se carguen los datos reales)
+  const defaultMetricasPorArea = {
     'todas': {
       ingresoLaboralDirecto: 85000,
       ingresoLaboralIndirecto: 35000, 
@@ -152,44 +141,138 @@ function MetricasLaborales() {
     }
   };
   
-  // Estado para las métricas actuales
-  const [metricas, setMetricas] = useState(metricasPorArea['todas']);
+  // Estados para las métricas
+  const [metricasPorArea, setMetricasPorArea] = useState(defaultMetricasPorArea);
+  const [metricas, setMetricas] = useState(defaultMetricasPorArea['todas']);
+  const [originalMetricas, setOriginalMetricas] = useState(defaultMetricasPorArea);
   
-  // Actualizar métricas al cambiar de área
+  // Efecto para cargar las métricas desde la API
   useEffect(() => {
-    setMetricas({...metricasPorArea[selectedArea]});
-  }, [selectedArea]);
-
+    const fetchMetricas = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // En una implementación real, esta sería una llamada a la API
+        // const response = await api.getMetricas();
+        
+        // Simulamos una respuesta de la API
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const response = defaultMetricasPorArea; // Aquí usaríamos los datos reales de la API
+        
+        // Guardar las métricas originales para poder resetear
+        setOriginalMetricas(JSON.parse(JSON.stringify(response)));
+        
+        // Establecer las métricas por área y las métricas actuales
+        setMetricasPorArea(response);
+        setMetricas(response[selectedArea]);
+      } catch (err) {
+        console.error('Error al cargar métricas:', err);
+        setError('No se pudieron cargar las métricas. Por favor, intenta de nuevo más tarde.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchMetricas();
+  }, []);
+  
+  // Efecto para actualizar las métricas cuando cambia el área seleccionada
+  useEffect(() => {
+    if (metricasPorArea && metricasPorArea[selectedArea]) {
+      setMetricas({...metricasPorArea[selectedArea]});
+    }
+  }, [selectedArea, metricasPorArea]);
+  
   // Actualizar el valor de una métrica
   const updateMetrica = (campo, valor) => {
     const nuevoValor = parseInt(valor) || 0;
     
-    // Actualizar el estado local
-    setMetricas({
-      ...metricas,
+    // Actualizar el estado local de métricas
+    setMetricas(prevMetricas => ({
+      ...prevMetricas,
       [campo]: nuevoValor
-    });
+    }));
     
-    // También actualizar en el objeto de datos por área
-    metricasPorArea[selectedArea] = {
-      ...metricasPorArea[selectedArea],
-      [campo]: nuevoValor
-    };
+    // Actualizar el objeto de métricas por área
+    setMetricasPorArea(prevMetricasPorArea => ({
+      ...prevMetricasPorArea,
+      [selectedArea]: {
+        ...prevMetricasPorArea[selectedArea],
+        [campo]: nuevoValor
+      }
+    }));
   };
   
-  // Función para reiniciar los valores
+  // Función para reiniciar valores a los originales
   const resetearValores = () => {
-    // Podríamos tener valores predeterminados para reiniciar
-    // Por ahora, simplemente recargamos los valores actuales del área
-    setMetricas({...metricasPorArea[selectedArea]});
+    if (originalMetricas && originalMetricas[selectedArea]) {
+      // Resetear a los valores originales
+      setMetricas({...originalMetricas[selectedArea]});
+      
+      // Actualizar también en el objeto de métricas por área
+      setMetricasPorArea(prevMetricasPorArea => ({
+        ...prevMetricasPorArea,
+        [selectedArea]: {...originalMetricas[selectedArea]}
+      }));
+    }
   };
   
-  // Función para guardar cambios (simulada)
-  const guardarCambios = () => {
-    // En una aplicación real, aquí enviaríamos los datos al servidor
-    alert('Cambios guardados correctamente');
+  // Función para guardar los cambios
+  const guardarCambios = async () => {
+    try {
+      setSaving(true);
+      
+      // Preparar los datos para enviar a la API
+      const datosParaEnviar = {
+        area: selectedArea,
+        metricas: {...metricas}
+      };
+      
+      // En una implementación real, haríamos la llamada a la API
+      // await api.updateMetricas(datosParaEnviar);
+      
+      // Simulamos una llamada a la API
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Actualizar las métricas originales con los nuevos valores
+      setOriginalMetricas(prevOriginalMetricas => ({
+        ...prevOriginalMetricas,
+        [selectedArea]: {...metricas}
+      }));
+      
+      // Mostrar mensaje de éxito
+      alert('Cambios guardados correctamente');
+    } catch (err) {
+      console.error('Error al guardar cambios:', err);
+      alert('Error al guardar los cambios. Por favor, intenta nuevamente.');
+    } finally {
+      setSaving(false);
+    }
   };
-
+  
+  // Mostrar pantalla de carga
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Cargando métricas...</p>
+      </div>
+    );
+  }
+  
+  // Mostrar pantalla de error
+  if (error) {
+    return (
+      <div className="error-container">
+        <p className="error-message">{error}</p>
+        <button className="retry-button" onClick={() => window.location.reload()}>
+          Reintentar
+        </button>
+      </div>
+    );
+  }
+  
   return (
     <div className="metricas-container">
       {/* Selector de área */}
@@ -199,6 +282,7 @@ function MetricasLaborales() {
           id="area-select"
           value={selectedArea}
           onChange={(e) => setSelectedArea(e.target.value)}
+          disabled={saving}
         >
           {areas.map(area => (
             <option key={area.id} value={area.id}>{area.nombre}</option>
@@ -206,7 +290,9 @@ function MetricasLaborales() {
         </select>
       </div>
       
+      {/* Grid de métricas */}
       <div className="metricas-grid">
+        {/* Tarjeta de Ingresos */}
         <div className="metrica-card">
           <h4>Ingresos</h4>
           
@@ -216,6 +302,7 @@ function MetricasLaborales() {
               type="number"
               value={metricas.ingresoLaboralDirecto}
               onChange={(e) => updateMetrica('ingresoLaboralDirecto', e.target.value)}
+              disabled={saving}
             />
           </div>
           
@@ -225,6 +312,7 @@ function MetricasLaborales() {
               type="number"
               value={metricas.ingresoLaboralIndirecto}
               onChange={(e) => updateMetrica('ingresoLaboralIndirecto', e.target.value)}
+              disabled={saving}
             />
           </div>
           
@@ -234,6 +322,7 @@ function MetricasLaborales() {
               type="number"
               value={metricas.ingresoLaboral}
               onChange={(e) => updateMetrica('ingresoLaboral', e.target.value)}
+              disabled={saving}
             />
           </div>
           
@@ -243,10 +332,12 @@ function MetricasLaborales() {
               type="number"
               value={metricas.ingresoTotal}
               onChange={(e) => updateMetrica('ingresoTotal', e.target.value)}
+              disabled={saving}
             />
           </div>
         </div>
         
+        {/* Tarjeta de Empleados */}
         <div className="metrica-card">
           <h4>Empleados</h4>
           
@@ -256,6 +347,7 @@ function MetricasLaborales() {
               type="number"
               value={metricas.numeroTotalEmpleados}
               onChange={(e) => updateMetrica('numeroTotalEmpleados', e.target.value)}
+              disabled={saving}
             />
           </div>
           
@@ -265,10 +357,12 @@ function MetricasLaborales() {
               type="number"
               value={metricas.cantidadEmpleadosFacturables}
               onChange={(e) => updateMetrica('cantidadEmpleadosFacturables', e.target.value)}
+              disabled={saving}
             />
           </div>
         </div>
         
+        {/* Tarjeta de Horas */}
         <div className="metrica-card">
           <h4>Horas</h4>
           
@@ -278,6 +372,7 @@ function MetricasLaborales() {
               type="number"
               value={metricas.horasLaboralesDirectas}
               onChange={(e) => updateMetrica('horasLaboralesDirectas', e.target.value)}
+              disabled={saving}
             />
           </div>
           
@@ -287,10 +382,12 @@ function MetricasLaborales() {
               type="number"
               value={metricas.horasTotalesLaborales}
               onChange={(e) => updateMetrica('horasTotalesLaborales', e.target.value)}
+              disabled={saving}
             />
           </div>
         </div>
         
+        {/* Tarjeta de Costos */}
         <div className="metrica-card">
           <h4>Costos</h4>
           
@@ -300,6 +397,7 @@ function MetricasLaborales() {
               type="number"
               value={metricas.dolaresLaboralesDirectos}
               onChange={(e) => updateMetrica('dolaresLaboralesDirectos', e.target.value)}
+              disabled={saving}
             />
           </div>
           
@@ -309,6 +407,7 @@ function MetricasLaborales() {
               type="number"
               value={metricas.dolaresTotalesLaborales}
               onChange={(e) => updateMetrica('dolaresTotalesLaborales', e.target.value)}
+              disabled={saving}
             />
           </div>
           
@@ -318,20 +417,36 @@ function MetricasLaborales() {
               type="number"
               value={metricas.costoLaboralDirecto}
               onChange={(e) => updateMetrica('costoLaboralDirecto', e.target.value)}
+              disabled={saving}
             />
           </div>
         </div>
       </div>
       
+      {/* Botones de acción */}
       <div className="buttons-container">
-        <button className="save-button" onClick={guardarCambios}>
-          Guardar Cambios
+        <button 
+          className="save-button" 
+          onClick={guardarCambios}
+          disabled={saving}
+        >
+          {saving ? (
+            <>
+              <span className="spinner"></span>
+              <span>Guardando...</span>
+            </>
+          ) : 'Guardar Cambios'}
         </button>
-        <button className="reset-button" onClick={resetearValores}>
+        <button 
+          className="reset-button" 
+          onClick={resetearValores}
+          disabled={saving}
+        >
           Reiniciar
         </button>
       </div>
 
+      {/* Resumen de métricas */}
       <div className="summary-container">
         <h3>Resumen de Métricas{selectedArea !== 'todas' ? ` - ${areas.find(a => a.id === selectedArea).nombre}` : ''}</h3>
         
@@ -456,6 +571,51 @@ function MetricasLaborales() {
           margin-top: 20px;
         }
         
+        .loading-container {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          min-height: 300px;
+        }
+        
+        .loading-spinner {
+          border: 4px solid rgba(0, 0, 0, 0.1);
+          border-left-color: #4361ee;
+          border-radius: 50%;
+          width: 40px;
+          height: 40px;
+          animation: spin 1s linear infinite;
+          margin-bottom: 16px;
+        }
+        
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        
+        .error-container {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          min-height: 300px;
+        }
+        
+        .error-message {
+          color: #e53935;
+          margin-bottom: 16px;
+        }
+        
+        .retry-button {
+          background-color: #4361ee;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          padding: 8px 16px;
+          cursor: pointer;
+        }
+        
         .area-selector {
           display: flex;
           align-items: center;
@@ -524,6 +684,11 @@ function MetricasLaborales() {
           font-size: 16px;
         }
         
+        .input-group input:disabled {
+          background-color: #f5f5f5;
+          cursor: not-allowed;
+        }
+        
         .buttons-container {
           display: flex;
           gap: 15px;
@@ -539,10 +704,27 @@ function MetricasLaborales() {
           font-size: 16px;
           cursor: pointer;
           transition: background-color 0.3s;
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }
         
-        .save-button:hover {
+        .save-button:hover:not(:disabled) {
           background-color: #3651d4;
+        }
+        
+        .save-button:disabled {
+          background-color: #a0aec0;
+          cursor: not-allowed;
+        }
+        
+        .spinner {
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-radius: 50%;
+          border-top: 2px solid white;
+          width: 16px;
+          height: 16px;
+          animation: spin 1s linear infinite;
         }
         
         .reset-button {
@@ -556,8 +738,13 @@ function MetricasLaborales() {
           transition: all 0.3s;
         }
         
-        .reset-button:hover {
+        .reset-button:hover:not(:disabled) {
           background-color: #e2e8f0;
+        }
+        
+        .reset-button:disabled {
+          color: #cbd5e1;
+          cursor: not-allowed;
         }
         
         .summary-container {
@@ -666,6 +853,7 @@ function MetricasLaborales() {
           color: #dc2626;
         }
         
+        /* Responsive design */
         @media (max-width: 768px) {
           .metricas-grid,
           .summary-grid {
@@ -688,6 +876,15 @@ function MetricasLaborales() {
           
           .area-selector select {
             width: 100%;
+          }
+          
+          .comparison-table {
+            font-size: 14px;
+          }
+          
+          .comparison-table th,
+          .comparison-table td {
+            padding: 8px 10px;
           }
         }
       `}</style>

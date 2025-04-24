@@ -1,20 +1,114 @@
 // pages/logs.js
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
+import api from '../api';
 
 export default function LogsPage() {
   // Flag para indicar que no queremos mostrar el header en esta página
   const skipHeader = true;
   
-  // Datos simulados de logs - mínimos y simplificados
-  const logsData = [
-    { id: 1, timestamp: '25/03/2025 08:30:45', level: 'info', message: 'Sistema iniciado correctamente' },
-    { id: 2, timestamp: '25/03/2025 09:15:22', level: 'warning', message: 'Uso de memoria elevado' },
-    { id: 3, timestamp: '25/03/2025 10:20:18', level: 'error', message: 'Fallo en la conexión a la base de datos' },
-    { id: 4, timestamp: '25/03/2025 11:05:37', level: 'success', message: 'Copia de seguridad completada' },
-    { id: 5, timestamp: '24/03/2025 14:12:50', level: 'info', message: 'Usuario admin ha iniciado sesión' },
-    { id: 6, timestamp: '24/03/2025 15:30:22', level: 'warning', message: 'Intento de acceso fallido' }
-  ];
+  // Estado para los logs
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Cargar logs desde la API
+  useEffect(() => {
+    const fetchLogs = async () => {
+      try {
+        setLoading(true);
+        const data = await api.viewLogs();
+        if (data && Array.isArray(data)) {
+          setLogs(data);
+        } else {
+          setLogs([]);
+        }
+      } catch (err) {
+        console.error("Error al cargar logs:", err);
+        setError("No se pudieron cargar los logs. Por favor, intenta nuevamente más tarde.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchLogs();
+  }, []);
+  
+  // Filtrar logs basado en el término de búsqueda
+  const filteredLogs = logs.filter(log => {
+    if (!searchTerm) return true;
+    
+    // Buscar en el mensaje y nivel del log
+    return (
+      (log.message && log.message.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (log.level && log.level.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  });
+  
+  // Mostrar mensaje de carga
+  if (loading) {
+    return (
+      <Layout title="Logs | Portal KPIs" skipHeader={skipHeader}>
+        <div className="logs-page">
+          <div className="loading-message">
+            Cargando logs...
+          </div>
+        </div>
+        
+        <style jsx>{`
+          .logs-page {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            min-height: 500px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+          }
+          
+          .loading-message {
+            color: #666;
+            font-size: 16px;
+          }
+        `}</style>
+      </Layout>
+    );
+  }
+  
+  // Mostrar mensaje de error
+  if (error) {
+    return (
+      <Layout title="Logs | Portal KPIs" skipHeader={skipHeader}>
+        <div className="logs-page">
+          <div className="error-message">
+            {error}
+          </div>
+        </div>
+        
+        <style jsx>{`
+          .logs-page {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            min-height: 500px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+          }
+          
+          .error-message {
+            color: #e53935;
+            font-size: 16px;
+          }
+        `}</style>
+      </Layout>
+    );
+  }
 
   return (
     <Layout title="Logs | Portal KPIs" skipHeader={skipHeader}>
@@ -28,20 +122,28 @@ export default function LogsPage() {
                 type="text"
                 placeholder="Buscar en logs..."
                 className="search-input"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
 
           <div className="logs-list">
-            {logsData.map(log => (
-              <div key={log.id} className="log-item">
-                <div className="log-header">
-                  <div className="log-timestamp">{log.timestamp}</div>
-                  <div className={`log-level ${log.level}`}>{log.level.toUpperCase()}</div>
-                </div>
-                <div className="log-message">{log.message}</div>
+            {filteredLogs.length === 0 ? (
+              <div className="no-logs-message">
+                No se encontraron registros de logs
               </div>
-            ))}
+            ) : (
+              filteredLogs.map(log => (
+                <div key={log.id} className="log-item">
+                  <div className="log-header">
+                    <div className="log-timestamp">{log.timestamp}</div>
+                    <div className={`log-level ${log.level}`}>{log.level.toUpperCase()}</div>
+                  </div>
+                  <div className="log-message">{log.message}</div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -84,6 +186,13 @@ export default function LogsPage() {
         /* Logs Section */
         .logs-list {
           padding: 16px;
+        }
+
+        .no-logs-message {
+          text-align: center;
+          padding: 40px 0;
+          color: #666;
+          font-size: 16px;
         }
 
         .log-item {

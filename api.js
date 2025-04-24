@@ -4,11 +4,31 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 // Función auxiliar para las peticiones autenticadas
 async function authFetch(url, method = 'GET', body = null) {
-  const token = localStorage.getItem('authToken');
+  // Intentar obtener el token de localStorage o sessionStorage
+  let token = null;
+  
+  try {
+    token = localStorage.getItem('authToken');
+  } catch (e) {
+    console.error('Error al acceder a localStorage:', e);
+  }
+  
   if (!token) {
+    console.log('Token no encontrado en localStorage, verificando sessionStorage');
+    try {
+      token = sessionStorage.getItem('authToken');
+    } catch (e) {
+      console.error('Error al acceder a sessionStorage:', e);
+    }
+  }
+  
+  if (!token) {
+    console.error('No se encontró token en ningún almacenamiento');
     throw new Error('No hay sesión activa');
   }
 
+  console.log('Token encontrado, realizando petición autenticada');
+  
   const headers = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${token}`,
@@ -44,6 +64,8 @@ async function authFetch(url, method = 'GET', body = null) {
 
 async function login(email, password) {
   try {
+    console.log('Iniciando login para:', email);
+    
     const response = await fetch(`${API_BASE_URL}/custom_auth/login/`, {
       method: 'POST',
       headers: {
@@ -52,26 +74,55 @@ async function login(email, password) {
       body: JSON.stringify({ email, password }),
     });
     
+    console.log('Respuesta status:', response.status);
+    
     const contentType = response.headers.get('content-type');
     const isJson = contentType && contentType.includes('application/json');
     
-    const data = isJson ? await response.json() : await response.text();
+    let data;
+    if (isJson) {
+      data = await response.json();
+      console.log('Datos recibidos:', data);
+    } else {
+      data = await response.text();
+      console.log('Texto recibido:', data);
+    }
     
     if (!response.ok) {
       throw new Error(isJson && data.error ? data.error : 'Error en la autenticación');
     }
     
     if (data && data.token) {
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      console.log('Token recibido, guardando en localStorage');
+      
+      // Intentar guardar en localStorage
+      try {
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user || {}));
+        console.log('Token guardado correctamente');
+      } catch (storageError) {
+        console.error('Error al guardar en localStorage:', storageError);
+        
+        // Intentar con sessionStorage como alternativa
+        try {
+          sessionStorage.setItem('authToken', data.token);
+          sessionStorage.setItem('user', JSON.stringify(data.user || {}));
+          console.log('Token guardado en sessionStorage como alternativa');
+        } catch (sessionError) {
+          console.error('Error al guardar también en sessionStorage:', sessionError);
+        }
+      }
+    } else {
+      console.warn('No se recibió token en la respuesta');
     }
     
     return data;
   } catch (error) {
-    console.error('Error en login:', error);
+    console.error('Error completo en login:', error);
     throw error;
   }
 }
+
 
 async function logout() {
   try {
