@@ -32,32 +32,38 @@ export default function Login() {
   
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!email || !password) {
-      setError('Por favor ingresa tu correo y contraseña');
+  
+    setError(null);
+  
+    if (!email && !password) {
+      setError('Por favor ingresa tu correo y contraseña.');
       return;
     }
-    
+  
+    if (!email) {
+      setError('Por favor ingresa tu correo.');
+      return;
+    }
+  
+    if (!password) {
+      setError('Por favor ingresa tu contraseña.');
+      return;
+    }
+  
     try {
       setLoading(true);
-      setError(null);
-      
-      // Call login function from context which now uses the API service
+  
       await login(email, password);
-      
-      // No need to redirect here as the useEffect will handle it once user state changes
+      router.push('/dashboard');;
+      // Redirección u otra acción la maneja useEffect
     } catch (err) {
-      // More specific error message based on the API response if available
-      if (err.message) {
-        setError(err.message);
-      } else {
-        setError('Credenciales inválidas. Por favor intenta de nuevo.');
-      }
-      console.error('Login error:', err);
+      setError(err.message || 'Credenciales inválidas. Por favor intenta de nuevo.');
+      // No se imprime en consola
     } finally {
       setLoading(false);
     }
   };
+  
   
   return (
     <>
