@@ -129,6 +129,7 @@ const Layout = ({ children, title = 'Portal KPIs', hideHeader = false }) => {
               </nav>
             </div>
           </div>
+          
         )}
         
         {/* Main Content */}
