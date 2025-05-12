@@ -6,6 +6,8 @@ import Layout from '../components/Layout';
 import Head from 'next/head';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import ApiService from '../api';
+
 
 // Importación dinámica para evitar errores de SSR con Recharts
 const PieChart = dynamic(() => import('recharts').then(mod => mod.PieChart), { ssr: false });
@@ -103,71 +105,126 @@ export default function Dashboard() {
   // Paso 1: Define un estado para los datos de la tabla
   const [tableData, setTableData] = useState(null);
 
-  // Paso 2: Utiliza useEffect para generar los datos solo en el cliente
+
+
   useEffect(() => {
     // Esta función solo se ejecutará en el cliente
-    const generateTableData = () => {
-      const data = [];
-      const headers = [];
-      
-      if (activeSection === 'kpis') {
-        headers.push('Métrica', 'Actual', 'Objetivo', 'Variación', 'Estado');
-      } else if (activeSection === 'admin') {
-        headers.push('Departamento', 'Presupuesto', 'Gastos', 'Restante', 'Porcentaje');
-      } else if (activeSection === 'engineering') {
-        headers.push('Proyecto', 'Progreso', 'Horas', 'Equipo', 'Deadline');
-      }
-      
-      for (let i = 0; i < 8; i++) {
-        const row = [];
+    const generateTableData = async () => {
+      try {
+        // Obtener datos de la API
+        const response = await ApiService.getKPIList();
+        console.log('Respuesta completa:', response);
+        
+        // Verificar si la respuesta tiene la propiedad KPIs
+        const kpisArray = response.KPIs || [];
+        console.log('Array de KPIs:', kpisArray);
+        console.log('Número de KPIs:', kpisArray.length);
+        
+        const data = [];
+        const headers = [];
         
         if (activeSection === 'kpis') {
-          const actual = Math.floor(Math.random() * 100);
-          const objetivo = Math.floor(70 + Math.random() * 30);
-          const variacion = actual - objetivo;
+          headers.push('Código', 'Descripción', 'Actual', 'Objetivo', 'Variación', 'Estado');
           
-          row.push(
-            `KPI-${i + 1}`,
-            `${actual}%`,
-            `${objetivo}%`,
-            `${variacion > 0 ? '+' : ''}${variacion}%`,
-            variacion >= 0 ? 'Cumplido' : 'Pendiente'
-          );
+          // Usar el número real de KPIs si están disponibles
+          const kpisCount = kpisArray.length > 0 ? kpisArray.length : 8;
+          
+          // Recorrer los KPIs con un bucle for tradicional
+          for (let i = 0; i < kpisCount; i++) {
+            const row = [];
+            
+            // Si hay datos reales disponibles, úsalos
+            if (i < kpisArray.length) {
+              const kpi = kpisArray[i];
+              
+              // Añadir el código y descripción del KPI
+              row.push(
+                kpi.code || `KPI-${i + 1}`,
+                kpi.description ? (kpi.description.length > 30 ? kpi.description.substring(0, 30) + '...' : kpi.description) : 'Sin descripción'
+              );
+              
+              // Generar valores aleatorios para demostración
+              const actual = Math.floor(Math.random() * 100);
+              const objetivo = Math.floor(70 + Math.random() * 30);
+              const variacion = actual - objetivo;
+              
+              // Añadir el resto de la información
+              row.push(
+                `${actual}%`,
+                `${objetivo}%`,
+                `${variacion > 0 ? '+' : ''}${variacion}%`,
+                variacion >= 0 ? 'Cumplido' : 'Pendiente'
+              );
+            } else {
+              // Para filas adicionales sin datos reales
+              const actual = Math.floor(Math.random() * 100);
+              const objetivo = Math.floor(70 + Math.random() * 30);
+              const variacion = actual - objetivo;
+              
+              row.push(
+                `KPI-${i + 1}`,
+                'Métrica simulada',
+                `${actual}%`,
+                `${objetivo}%`,
+                `${variacion > 0 ? '+' : ''}${variacion}%`,
+                variacion >= 0 ? 'Cumplido' : 'Pendiente'
+              );
+            }
+            
+            data.push(row);
+          }
         } else if (activeSection === 'admin') {
-          const presupuesto = Math.floor(10000 + Math.random() * 90000);
-          const gastos = Math.floor(presupuesto * (0.3 + Math.random() * 0.7));
-          const restante = presupuesto - gastos;
-          const porcentaje = Math.floor((restante / presupuesto) * 100);
+          headers.push('Departamento', 'Presupuesto', 'Gastos', 'Restante', 'Porcentaje');
           
-          row.push(
-            `Depto-${i + 1}`,
-            `$${presupuesto.toLocaleString()}`,
-            `$${gastos.toLocaleString()}`,
-            `$${restante.toLocaleString()}`,
-            `${porcentaje}%`
-          );
+          for (let i = 0; i < 8; i++) {
+            const presupuesto = Math.floor(10000 + Math.random() * 90000);
+            const gastos = Math.floor(presupuesto * (0.3 + Math.random() * 0.7));
+            const restante = presupuesto - gastos;
+            const porcentaje = Math.floor((restante / presupuesto) * 100);
+            
+            const row = [
+              `Depto-${i + 1}`,
+              `$${presupuesto.toLocaleString()}`,
+              `$${gastos.toLocaleString()}`,
+              `$${restante.toLocaleString()}`,
+              `${porcentaje}%`
+            ];
+            
+            data.push(row);
+          }
         } else if (activeSection === 'engineering') {
-          const progreso = Math.floor(Math.random() * 100);
-          const horas = Math.floor(40 + Math.random() * 160);
+          headers.push('Proyecto', 'Progreso', 'Horas', 'Equipo', 'Deadline');
           
-          row.push(
-            `Proyecto-${i + 1}`,
-            `${progreso}%`,
-            `${horas}h`,
-            `Equipo ${String.fromCharCode(65 + i)}`,
-            `${Math.floor(1 + Math.random() * 28)}/${Math.floor(1 + Math.random() * 12)}/2025`
-          );
+          for (let i = 0; i < 8; i++) {
+            const progreso = Math.floor(Math.random() * 100);
+            const horas = Math.floor(40 + Math.random() * 160);
+            
+            const row = [
+              `Proyecto-${i + 1}`,
+              `${progreso}%`,
+              `${horas}h`,
+              `Equipo ${String.fromCharCode(65 + i)}`,
+              `${Math.floor(1 + Math.random() * 28)}/${Math.floor(1 + Math.random() * 12)}/2025`
+            ];
+            
+            data.push(row);
+          }
         }
         
-        data.push(row);
+        setTableData({ headers, data });
+        
+      } catch (error) {
+        console.error('Error al generar datos de tabla:', error);
+        // Establecer datos por defecto en caso de error
+        setTableData({ 
+          headers: ['Error'], 
+          data: [['No se pudieron cargar los datos. Por favor, inténtalo de nuevo.']] 
+        });
       }
-      
-      setTableData({ headers, data });
     };
-    
-    // Generar los datos cuando cambie la sección activa
+  
     generateTableData();
-  }, [activeSection]);
+  }, [activeSection]); // Ejecutar cada vez que cambie la sección activa
 
   // Paso 3: Mantén la función generateRandomData vacía o elimínala
   // (para mantener compatibilidad con otras partes del código que puedan llamarla)

@@ -141,6 +141,7 @@ async function login(email, password) {
     throw error;
   }
 }
+
 async function logout() {
   const refreshToken = localStorage.getItem("refreshToken");
   const accessToken = localStorage.getItem("accessToken"); 
@@ -164,6 +165,7 @@ async function logout() {
 
   return { success: true };
 }
+
 
 async function viewUsers() {
   try {
@@ -262,6 +264,16 @@ async function getMainDashboard() {
     return await authFetch('/dashboard/');
   } catch (error) {
     console.error('Error al obtener dashboard principal:', error);
+    throw error;
+  }
+}
+
+async function getKPIList() {
+  try {
+    return await authFetch('/dashboard/kpi/');
+  }
+  catch (error) {
+    console.error('Error al obtener lista de KPI:', error);
     throw error;
   }
 }
@@ -391,6 +403,7 @@ export default {
   updateUser,
   deleteUser,
   getUser,
+  getKPIList,
   
   // Administración
   getDashboardAdministrativo,
